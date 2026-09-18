@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Zap, Menu, X } from 'lucide-react'
-import logo from "../assets/logo.jpeg";
+import { Menu, X } from 'lucide-react'
+import logo from "../assets/logo.png";
+
 const NAV = [
   { label:'Creators',     href:'#creators'      },
   { label:'Brands',       href:'#brands'        },
@@ -43,29 +44,42 @@ export default function Navbar() {
           border: scrolled ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
           transition: 'all 0.4s ease',
         }}>
-          <a href="#" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-  <img
-    src={logo}
-    alt="Torque Network"
+          <motion.a
+  href="#"
+  whileHover={{ scale: 1.04 }}
+  transition={{ duration: 0.25 }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    textDecoration: "none"
+  }}
+>
+  <div
     style={{
-      height: 42,
-      width: "auto",
-      objectFit: "contain",
-      filter: "drop-shadow(0 0 14px rgba(59,130,246,0.35))",
-      transition: "transform 0.3s ease, filter 0.3s ease",
+      background: "rgba(255,255,255,0.95)",
+      borderRadius: 12,
+      padding: "6px 10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow:
+        "0 0 22px rgba(59,130,246,0.35), 0 6px 20px rgba(0,0,0,0.25)",
+      border: "1px solid rgba(255,255,255,0.25)"
     }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = "scale(1.05)";
-      e.currentTarget.style.filter =
-        "drop-shadow(0 0 20px rgba(34,211,238,0.55))";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = "scale(1)";
-      e.currentTarget.style.filter =
-        "drop-shadow(0 0 14px rgba(59,130,246,0.35))";
-    }}
-  />
-</a>
+  >
+    <img
+      src={logo}
+      alt="Torque Network"
+      className="nav-logo"
+      style={{
+        height: 60,
+        width: "auto",
+        objectFit: "contain"
+      }}
+    />
+  </div>
+</motion.a>
+
           <nav className="nav-links">
             {NAV.map(l => (
               <a key={l.label} href={l.href} style={{ fontSize:13.5, color:'#64748B', textDecoration:'none', fontWeight:500, transition:'color 0.2s' }}
@@ -134,6 +148,11 @@ export default function Navbar() {
           .nav-links,.nav-cta{ display:none; }
           .nav-burger{ display:block; }
         }
+          @media(max-width:900px){
+  .nav-logo{
+    height:36px !important;
+  }
+}
       `}</style>
     </>
   )

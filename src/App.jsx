@@ -4,116 +4,104 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import StarField from './components/StarField'
 
-// Sections
-import Hero          from './sections/Hero'
-import Metrics       from './sections/Metrics'
-import CreatorUniverse from './sections/CreatorUniverse'
-import TrustPillars  from './sections/TrustPillars'
-import Problem       from './sections/Problem'
-import HowItWorks    from './sections/HowItWorks'
-import WhyTorque     from './sections/WhyTorque'
-import GrowthJourney from './sections/GrowthJourney'
-import CreatorTimeline from './sections/CreatorTimeline'
-import IndiaMap      from './sections/IndiaMap'
-import CreatorWall   from './sections/CreatorWall'
-import ForBrands     from './sections/ForBrands'
-import Community     from './sections/Community'
-import FAQ           from './sections/FAQ'
-import FinalCTA      from './sections/FinalCTA'
+import Hero             from './sections/Hero'
+import Metrics          from './sections/Metrics'
+import Problem          from './sections/Problem'
+import WhatChanges      from './sections/WhatChanges'
+import WhatIsTorque     from './sections/WhatIsTorque'
+import MemberBenefits   from './sections/MemberBenefits'
+import GrowthJourney    from './sections/GrowthJourney'
+import CreatorTimeline  from './sections/CreatorTimeline'
+import HowItWorks       from './sections/HowItWorks'
+import IndiaMap         from './sections/IndiaMap'
+import FoundingAdvantage from './sections/FoundingAdvantage'
+import Pricing          from './sections/Pricing'
+import Obligations      from './sections/Obligations'
+import CreatorWall      from './sections/CreatorWall'
+import ForBrands        from './sections/ForBrands'
+import Community        from './sections/Community'
+import FAQ              from './sections/FAQ'
+import FinalCTA         from './sections/FinalCTA'
 
-function Divider() {
+function D() {
   return (
-    <div style={{ padding: '0 28px' }}>
-      <div style={{
-        height: 1, maxWidth: 1200, margin: '0 auto',
-        background: 'linear-gradient(to right, transparent, rgba(59,130,246,0.15), transparent)',
-      }} />
+    <div style={{ padding:'0 28px' }}>
+      <div style={{ height:1, maxWidth:1200, margin:'0 auto',
+        background:'linear-gradient(to right,transparent,rgba(59,130,246,0.14),transparent)' }}/>
     </div>
   )
 }
 
 export default function App() {
   useEffect(() => {
-    // Smooth anchor scroll
-    const handler = (e) => {
+    const h = (e) => {
       const a = e.target.closest('a[href^="#"]')
       if (!a) return
-      const id = a.getAttribute('href').slice(1)
-      const el = document.getElementById(id)
-      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }) }
+      const el = document.getElementById(a.getAttribute('href').slice(1))
+      if (el) { e.preventDefault(); el.scrollIntoView({ behavior:'smooth', block:'start' }) }
     }
-    document.addEventListener('click', handler)
-    return () => document.removeEventListener('click', handler)
+    document.addEventListener('click', h)
+    return () => document.removeEventListener('click', h)
   }, [])
 
   return (
-    <div style={{ background: '#050816', minHeight: '100vh', position: 'relative' }}>
-      {/* Persistent animated background */}
+    <div style={{ background:'#050816', minHeight:'100vh' }}>
       <StarField />
-
-      {/* UI chrome */}
       <Cursor />
       <Navbar />
-
       <main>
-        {/* ── HERO ────────────────────────────── */}
+        {/* 1 */}
         <Hero />
-
-        {/* ── METRICS BAR ─────────────────────── */}
+        {/* 2 — Metrics */}
         <Metrics />
-        <Divider />
-
-        {/* ── CREATOR UNIVERSE (signature 3D) ─── */}
-        <CreatorUniverse />
-        <Divider />
-
-        {/* ── TRUST PILLARS ───────────────────── */}
-        <TrustPillars />
-        <Divider />
-
-        {/* ── THE PROBLEM ─────────────────────── */}
+        <D/>
+        {/* 3 — Problem */}
         <section id="creators"><Problem /></section>
-        <Divider />
-
-        {/* ── HOW IT WORKS ────────────────────── */}
-        <section id="how-it-works"><HowItWorks /></section>
-        <Divider />
-
-        {/* ── INFRASTRUCTURE / WHY TORQUE ─────── */}
-        <WhyTorque />
-        <Divider />
-
-        {/* ── GROWTH JOURNEY ──────────────────── */}
+        <D/>
+        {/* 4 — What Changes */}
+        <WhatChanges />
+        <D/>
+        {/* 5 — What Is Torque */}
+        <WhatIsTorque />
+        <D/>
+        {/* 6 — Member Benefits */}
+        <MemberBenefits />
+        <D/>
+        {/* 7 — Growth Journey */}
         <GrowthJourney />
-        <Divider />
-
-        {/* ── CREATOR TIMELINE (Year 1/2/3+) ─── */}
+        <D/>
+        {/* 8 — Creator Timeline */}
         <CreatorTimeline />
-        <Divider />
-
-        {/* ── INDIA MAP ───────────────────────── */}
+        <D/>
+        {/* 9 — How It Works */}
+        <section id="how-it-works"><HowItWorks /></section>
+        <D/>
+        {/* 10 — India Map + Roadmap */}
         <IndiaMap />
-        <Divider />
-
-        {/* ── FOUNDING CREATOR WALL ───────────── */}
+        <D/>
+        {/* 11 — Founding Advantage */}
+        <FoundingAdvantage />
+        <D/>
+        {/* 12 — Pricing */}
+        <section id="pricing"><Pricing /></section>
+        <D/>
+        {/* 13 — Obligations */}
+        <Obligations />
+        <D/>
+        {/* 14 — Creator Wall */}
         <CreatorWall />
-        <Divider />
-
-        {/* ── FOR BRANDS ──────────────────────── */}
+        <D/>
+        {/* 15 — For Brands */}
         <section id="brands"><ForBrands /></section>
-        <Divider />
-
-        {/* ── COMMUNITY APPLICATION ───────────── */}
+        <D/>
+        {/* 16 — Community Application */}
         <section id="community"><Community /></section>
-        <Divider />
-
-        {/* ── FAQ ─────────────────────────────── */}
+        <D/>
+        {/* 17 — FAQ */}
         <section id="faq"><FAQ /></section>
-
-        {/* ── FINAL CTA ───────────────────────── */}
+        {/* 18 — Final CTA */}
         <FinalCTA />
       </main>
-
       <Footer />
     </div>
   )

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { Zap, Globe, Share2, Link2, Play } from 'lucide-react'
-import logo from "../assets/logo.jpeg";
+import { Globe, Share2, Link2, Play } from 'lucide-react'
+import logo from "../assets/logo.png";
 const columns = [
   { title:'Creators', links:['How It Works','Creator Universe','Community','Apply Now','FAQ'] },
   { title:'Brands',   links:['Brand Partnerships','Campaign Packages','Get a Demo','Case Studies'] },
@@ -21,35 +21,42 @@ export default function Footer() {
       <div className="container" style={{position:'relative',zIndex:1}}>
         <div style={{display:'grid',gridTemplateColumns:'240px repeat(4,1fr)',gap:40,marginBottom:56,alignItems:'start'}} className="footer-grid">
           <div>
-            <motion.div
-  whileHover={{ scale: 1.03 }}
+            <motion.a
+  href="#"
+  whileHover={{ scale: 1.04 }}
   transition={{ duration: 0.25 }}
   style={{
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: 18
+    display: "inline-flex",
+    alignItems: "center",
+    marginBottom: 16,
+    textDecoration: "none"
   }}
 >
-  <img
-    src={logo}
-    alt="Torque Network"
+  <div
     style={{
-      height: 46,
-      width: 'auto',
-      objectFit: 'contain',
-      filter: 'drop-shadow(0 0 18px rgba(59,130,246,0.35))',
-      transition: 'filter 0.3s ease'
+      background: "rgba(255,255,255,0.95)",
+      borderRadius: 14,
+      padding: "8px 12px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      border: "1px solid rgba(255,255,255,0.2)",
+      boxShadow:
+        "0 0 24px rgba(59,130,246,0.35), 0 8px 24px rgba(0,0,0,0.25)"
     }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.filter =
-        'drop-shadow(0 0 24px rgba(34,211,238,0.55))';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.filter =
-        'drop-shadow(0 0 18px rgba(59,130,246,0.35))';
-    }}
-  />
-</motion.div>
+  >
+    <img
+      src={logo}
+      alt="Torque Network"
+      className="footer-logo"
+      style={{
+        height: 34,
+        width: "auto",
+        objectFit: "contain"
+      }}
+    />
+  </div>
+</motion.a>
             <p style={{fontSize:13,color:'#475569',lineHeight:1.68,marginBottom:8,maxWidth:210}}>
               India's invite-first creator community.
             </p>
@@ -99,7 +106,18 @@ export default function Footer() {
       <style>{`
         @media(max-width:1024px){.footer-grid{grid-template-columns:repeat(3,1fr) !important;}}
         @media(max-width:640px) {.footer-grid{grid-template-columns:repeat(2,1fr) !important;gap:28px 20px !important;}}
-      `}</style>
+      .footer-logo{
+  height:34px;
+  width:auto;
+}
+
+@media(max-width:640px){
+  .footer-logo{
+    height:28px !important;
+  }
+}`}
+      
+      </style>
     </footer>
   )
 }
