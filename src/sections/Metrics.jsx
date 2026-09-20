@@ -2,24 +2,22 @@ import { motion } from 'framer-motion'
 import { useInView, useCounter } from '../hooks/useInView'
 
 const METRICS = [
-  { value:1000, prefix:'', suffix:'+',    label:'Members amplify your post', sub:'500–1,000 per post' },
-  { value:48,   prefix:'', suffix:' Hrs', label:'Guaranteed engagement',     sub:'Within the window' },
-  { value:10000,prefix:'', suffix:'+',    label:'Network at full scale',     sub:'Growing monthly'   },
-  { value:1500, prefix:'₹',suffix:'',    label:'Founding rate / month',     sub:'Locked for life'   },
+  { value:2500, prefix:'500–', suffix:'+', label:'Real creators engage your post', sub:'Per post submitted' },
+  { value:10000, prefix:'', suffix:'+',   label:'Real influencers in the network', sub:'Growing every week' },
+  { value:48,   prefix:'', suffix:' hrs', label:'Engagement window',               sub:'Staggered naturally' },
+  { value:500,  prefix:'', suffix:'',     label:'Founding spots · Free for life',  sub:'Engage regularly to keep it' },
 ]
 
 function Metric({ m, delay }) {
   const [ref, inView] = useInView()
   const count = useCounter(m.value, 2000, inView)
   return (
-    <motion.div ref={ref}
-      initial={{ opacity:0, y:20 }} animate={inView?{opacity:1,y:0}:{}}
-      transition={{ duration:0.65, delay, ease:[0.23,1,0.32,1] }}
-      style={{ textAlign:'center', padding:'0 16px', position:'relative' }}
-    >
-      <div style={{ fontSize:'clamp(1.9rem,3vw,2.6rem)', fontWeight:700, fontFamily:'Space Grotesk', letterSpacing:'-0.04em', lineHeight:1,
+    <motion.div ref={ref} initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}}
+      transition={{duration:0.65,delay,ease:[0.23,1,0.32,1]}}
+      style={{ textAlign:'center', padding:'0 12px' }}>
+      <div style={{ fontSize:'clamp(1.7rem,2.8vw,2.4rem)', fontWeight:700, fontFamily:'Space Grotesk', letterSpacing:'-0.04em', marginBottom:8,
         background:'linear-gradient(135deg,#3B82F6,#22D3EE)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
-        {m.prefix}{count.toLocaleString()}{m.suffix}
+        {m.prefix}{count === m.value && m.suffix === '+' ? count.toLocaleString() : count.toLocaleString()}{m.suffix}
       </div>
       <div style={{ fontSize:13, color:'#F8FAFC', fontWeight:600, marginTop:8 }}>{m.label}</div>
       <div style={{ fontSize:11, color:'#475569', marginTop:3 }}>{m.sub}</div>
@@ -32,21 +30,13 @@ export default function Metrics() {
   return (
     <section style={{ padding:'0 0 80px' }}>
       <div className="container">
-        <motion.div ref={ref}
-          initial={{ opacity:0, y:20 }} animate={inView?{opacity:1,y:0}:{}} transition={{ duration:0.7 }}
+        <motion.div ref={ref} initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:0.7}}
           style={{ background:'rgba(13,19,38,0.55)', backdropFilter:'blur(20px)',
             border:'1px solid rgba(59,130,246,0.12)', borderRadius:24, padding:'44px 32px',
             display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0,
-            position:'relative', overflow:'hidden' }} className="metrics-card"
-        >
-          <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'70%', height:1,
-            background:'linear-gradient(to right,transparent,rgba(34,211,238,0.35),transparent)' }}/>
-          <div style={{ position:'absolute', bottom:0, left:'50%', transform:'translateX(-50%)', width:'50%', height:1,
-            background:'linear-gradient(to right,transparent,rgba(59,130,246,0.2),transparent)' }}/>
-          {[1,2,3].map(i=>(
-            <div key={i} style={{ position:'absolute', left:`${i*25}%`, top:'15%', bottom:'15%', width:1,
-              background:'rgba(59,130,246,0.1)' }} className="metric-div"/>
-          ))}
+            position:'relative', overflow:'hidden' }} className="metrics-card">
+          <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'70%', height:1, background:'linear-gradient(to right,transparent,rgba(34,211,238,0.35),transparent)' }}/>
+          {[1,2,3].map(i=><div key={i} style={{ position:'absolute', left:`${i*25}%`, top:'15%', bottom:'15%', width:1, background:'rgba(59,130,246,0.1)' }} className="metric-div"/>)}
           {METRICS.map((m,i)=><Metric key={m.label} m={m} delay={i*0.09}/>)}
         </motion.div>
       </div>

@@ -7,45 +7,30 @@ import { submitCreatorApplication } from '../hooks/useWeb3Forms'
 /* ── Multi-step application form ─────────────── */
 const STEPS = [
   {
-    label:'Personal Info', fields:[
-      { id:'name',      label:'Full Name',      type:'text',  placeholder:'Your full name', required:true },
-      { id:'email',     label:'Email',          type:'email', placeholder:'you@email.com',  required:true },
-      { id:'phone',     label:'Phone',          type:'tel',   placeholder:'+91 98765 43210',required:true },
-      { id:'whatsapp',  label:'WhatsApp',       type:'tel',   placeholder:'+91 98765 43210',required:false },
+    label:'Your Details', fields:[
+      { id:'name',      label:'Full Name',         type:'text',  placeholder:'Your full name',     required:true },
+      { id:'instagram', label:'Instagram Handle',  type:'text',  placeholder:'@yourhandle',        required:true },
+      { id:'followers', label:'Follower Count',    type:'select',options:['Under 5K','5K–10K','10K–50K','50K–100K','100K+'], required:true },
+      { id:'email',     label:'Email',             type:'email', placeholder:'you@email.com',      required:true },
+      { id:'phone',     label:'Phone / WhatsApp',  type:'tel',   placeholder:'+91 98765 43210',    required:true },
     ],
   },
   {
-    label:'Creator Profile', fields:[
-      { id:'instagram',    label:'Instagram Handle', type:'text', placeholder:'@yourhandle',     required:true },
-      { id:'profile_url',  label:'Profile URL',      type:'url',  placeholder:'instagram.com/…', required:false },
-      { id:'followers',    label:'Follower Count',   type:'text', placeholder:'e.g. 12,000',     required:true },
-      { id:'niche',        label:'Primary Niche',    type:'select',options:['Fashion','Tech','Fitness','Travel','Food','Beauty','Finance','Sports','Lifestyle','Art','Dance','Vlogs','Other'], required:true },
-      { id:'niche2',       label:'Secondary Niche',  type:'select',options:['None','Fashion','Tech','Fitness','Travel','Food','Beauty','Finance','Sports','Lifestyle','Art','Dance','Vlogs','Other'], required:false },
+    label:'Membership Tier', fields:[
+      { id:'tier', label:'Membership Tier', type:'select', options:['Founding Member (Free — first 500 only)','Standard Member (₹1,500/month)'], required:true },
     ],
-  },
-  {
-    label:'Location & Platforms', fields:[
-      { id:'city',      label:'City',             type:'text',   placeholder:'Mumbai',              required:true },
-      { id:'state',     label:'State',            type:'text',   placeholder:'Maharashtra',         required:true },
-      { id:'language',  label:'Content Language', type:'select', options:['Hindi','English','Hindi + English','Tamil','Telugu','Kannada','Bengali','Marathi','Other'], required:true },
-      { id:'platforms', label:'Platforms Used',   type:'text',   placeholder:'Instagram, YouTube…', required:true },
-      { id:'frequency', label:'Posting Frequency',type:'select', options:['Daily','3–5x week','1–2x week','A few times/month'], required:true },
+    goals:[
+      'Watch, save and share fellow creators\' posts within 48 hours',
+      'Engage genuinely — no automation or bots',
+      'Submit at least one post per month for amplification',
+      'Help grow a community that grows back',
     ],
-  },
-  {
-    label:'Your Goals', fields:[], goals:[
-      'Build a strong creator community',
-      'Collaborate with other creators',
-      'Access growth resources',
-      'Future brand opportunities',
-    ],
+    goalsLabel:'I understand and agree to:',
   },
 ]
 
 const emptyForm = {
-  name:'',email:'',phone:'',whatsapp:'',instagram:'',profile_url:'',
-  followers:'',niche:'',niche2:'',city:'',state:'',language:'',
-  platforms:'',frequency:'',goals:[],consent:false,
+  name:'',instagram:'',followers:'',email:'',phone:'',tier:'',goals:[],consent:false,
 }
 
 function StepIndicator({ current, total }) {
@@ -140,7 +125,7 @@ function SuccessAnimation() {
       </motion.h3>
       <motion.p initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:0.75}}
         style={{fontSize:15,color:'#64748B',lineHeight:1.65,maxWidth:340,margin:'0 auto'}}>
-        You're now part of the <span style={{color:'#22D3EE',fontWeight:600}}>Founding Community</span> waitlist. We'll review your application and reach out within 48 hours.
+        We'll review your profile and get back to you within 48 hours. Welcome to Torque Network.
       </motion.p>
     </motion.div>
   )
@@ -196,7 +181,7 @@ export default function Community() {
         >
           <span className="section-tag" style={{color:'#22D3EE'}}>Join the Movement</span>
           <h2 style={{fontSize:'clamp(2rem,4.5vw,3.2rem)',fontWeight:700,lineHeight:1.1,letterSpacing:'-0.035em'}}>
-            Help build India's next<br/><span className="gradient-text">creator community.</span>
+            Register to Join<br/><span className="gradient-text">Torque Network.</span>
           </h2>
           <p style={{fontSize:17,color:'#64748B',maxWidth:520,margin:'18px auto 0',lineHeight:1.72}}>
             We're inviting early creators to shape the future of Torque Network. This is your chance to be a founding voice.
@@ -283,7 +268,7 @@ export default function Community() {
                           {/* Goals step */}
                           {currentStep.goals&&(
                             <div style={{marginBottom:24}}>
-                              <p style={{fontSize:13,color:'#64748B',marginBottom:16}}>What do you hope to get from Torque? (select all that apply)</p>
+                              <p style={{fontSize:13,color:'#64748B',marginBottom:16}}>{currentStep.goalsLabel||'Select all that apply'}</p>
                               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                                 {currentStep.goals.map(g=>(
                                   <button type="button" key={g} onClick={()=>toggleGoal(g)}

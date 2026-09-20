@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Globe, Share2, Link2, Play } from 'lucide-react'
-import logo from "../assets/logo.png";
+
 const columns = [
   { title:'Creators', links:['How It Works','Creator Universe','Community','Apply Now','FAQ'] },
   { title:'Brands',   links:['Brand Partnerships','Campaign Packages','Get a Demo','Case Studies'] },
@@ -21,47 +21,22 @@ export default function Footer() {
       <div className="container" style={{position:'relative',zIndex:1}}>
         <div style={{display:'grid',gridTemplateColumns:'240px repeat(4,1fr)',gap:40,marginBottom:56,alignItems:'start'}} className="footer-grid">
           <div>
-            <motion.a
-  href="#"
-  whileHover={{ scale: 1.04 }}
-  transition={{ duration: 0.25 }}
-  style={{
-    display: "inline-flex",
-    alignItems: "center",
-    marginBottom: 16,
-    textDecoration: "none"
-  }}
->
-  <div
-    style={{
-      background: "rgba(255,255,255,0.95)",
-      borderRadius: 14,
-      padding: "8px 12px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      border: "1px solid rgba(255,255,255,0.2)",
-      boxShadow:
-        "0 0 24px rgba(59,130,246,0.35), 0 8px 24px rgba(0,0,0,0.25)"
-    }}
-  >
-    <img
-      src={logo}
-      alt="Torque Network"
-      className="footer-logo"
-      style={{
-        height: 34,
-        width: "auto",
-        objectFit: "contain"
-      }}
-    />
-  </div>
-</motion.a>
+            <div style={{marginBottom:14}}>
+              <img src="/logo.png" alt="Torque Network"
+                style={{
+                  height:64, width:'auto', objectFit:'contain',
+                  filter:'brightness(1.08) saturate(1.2) drop-shadow(0 0 12px rgba(59,130,246,0.5))',
+                  transition:'filter 0.3s ease',
+                }}
+                onMouseEnter={e=>e.currentTarget.style.filter='brightness(1.22) saturate(1.4) drop-shadow(0 0 20px rgba(34,211,238,0.65))'}
+                onMouseLeave={e=>e.currentTarget.style.filter='brightness(1.08) saturate(1.2) drop-shadow(0 0 12px rgba(59,130,246,0.5))'}
+              />
+            </div>
             <p style={{fontSize:13,color:'#475569',lineHeight:1.68,marginBottom:8,maxWidth:210}}>
-              India's invite-first creator community.
+              Amplification Network for Instagram Creators
             </p>
             <p style={{fontSize:11,color:'#334155',lineHeight:1.6,marginBottom:24,maxWidth:210,fontStyle:'italic'}}>
-              Content Creates Potential.<br/>Torque Creates Momentum.
+              Free for life for the first 500 members.
             </p>
             <div style={{display:'flex',gap:10}}>
               {socials.map(({ icon:Icon, label })=>(
@@ -93,7 +68,7 @@ export default function Footer() {
         </div>
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:28}}/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16}}>
-          <p style={{fontSize:12,color:'#2D3748'}}>© 2024 Torque Network. All rights reserved.</p>
+          <p style={{fontSize:12,color:'#2D3748'}}>© 2024 Torque Network · Amplification Network for Instagram Creators</p>
           <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
             {['Privacy Policy','Terms of Service','Creator Agreement'].map(l=>(
               <a key={l} href="#" style={{fontSize:12,color:'#2D3748',textDecoration:'none',transition:'color 0.2s'}}
@@ -106,18 +81,7 @@ export default function Footer() {
       <style>{`
         @media(max-width:1024px){.footer-grid{grid-template-columns:repeat(3,1fr) !important;}}
         @media(max-width:640px) {.footer-grid{grid-template-columns:repeat(2,1fr) !important;gap:28px 20px !important;}}
-      .footer-logo{
-  height:34px;
-  width:auto;
-}
-
-@media(max-width:640px){
-  .footer-logo{
-    height:28px !important;
-  }
-}`}
-      
-      </style>
+      `}</style>
     </footer>
   )
 }
