@@ -6,11 +6,13 @@ import StarField from './components/StarField'
 
 import Hero             from './sections/Hero'
 import Metrics          from './sections/Metrics'
-import Problem          from './sections/Problem'
+// import Problem          from './sections/Problem'
 import WhatChanges      from './sections/WhatChanges'
 import WhatIsTorque     from './sections/WhatIsTorque'
 import MemberBenefits   from './sections/MemberBenefits'
+import RealBenefits from "./sections/RealBenefits";
 import GrowthJourney    from './sections/GrowthJourney'
+import DifferentCreators from "./sections/DifferentCreators";
 import CreatorTimeline  from './sections/CreatorTimeline'
 import HowItWorks       from './sections/HowItWorks'
 import IndiaMap         from './sections/IndiaMap'
@@ -56,20 +58,22 @@ export default function App() {
         <Metrics />
         <D/>
         {/* 3 — Problem */}
-        <section id="creators"><Problem /></section>
-        <D/>
+        {/* <section id="creators"><Problem /></section>
+        <D/> */}
         {/* 4 — What Changes */}
         <WhatChanges />
         <D/>
         {/* 5 — What Is Torque */}
         <WhatIsTorque />
         <D/>
+        <DifferentCreators />
         {/* 6 — Member Benefits */}
         <MemberBenefits />
         <D/>
         {/* 7 — Growth Journey */}
         <GrowthJourney />
         <D/>
+        <RealBenefits />
         {/* 8 — Creator Timeline */}
         <CreatorTimeline />
         <D/>
