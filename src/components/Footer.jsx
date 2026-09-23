@@ -3,7 +3,7 @@ import { Globe, Share2, Link2, Play } from 'lucide-react'
 
 const columns = [
   { title:'Creators', links:['How It Works','Creator Universe','Community','Apply Now','FAQ'] },
-  { title:'Brands',   links:['Brand Partnerships','Campaign Packages','Get a Demo','Case Studies'] },
+  // { title:'Brands',   links:['Brand Partnerships','Campaign Packages','Get a Demo','Case Studies'] },
   { title:'Resources',links:['Creator Blog','Algorithm Guide','Content Playbook','Community Guidelines'] },
   { title:'Contact',  links:['hello@torquenetwork.in','Partner With Us','Press & Media','Careers'] },
 ]
