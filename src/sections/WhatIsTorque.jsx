@@ -268,9 +268,41 @@ export default function WhatIsTorque() {
             marginBottom: 56,
           }}
         >
-          <span className="section-tag" style={{ color: "#3B82F6" }}>
-            What is Torque Network?
-          </span>
+         <span
+  className="section-tag"
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "12px 22px",
+    borderRadius: 999,
+    background: "rgba(13,19,38,0.65)",
+    border: "1px solid rgba(59,130,246,0.28)",
+    backdropFilter: "blur(14px)",
+  }}
+>
+  <span
+    className="pulse-ring"
+    style={{
+      width: 9,
+      height: 9,
+      borderRadius: "50%",
+      background: "#22D3EE",
+      display: "inline-block",
+      boxShadow: "0 0 12px #22D3EE",
+    }}
+  />
+  <span
+    style={{
+      fontSize: "18px",
+      fontWeight: 800,
+      color: "#EAF4FF",
+      letterSpacing: "0.01em",
+    }}
+  >
+    What is Torque Network?
+  </span>
+</span>
 
           <h2
             style={{
@@ -297,9 +329,8 @@ export default function WhatIsTorque() {
               lineHeight: 1.7,
             }}
           >
-            Torque Network is a private, vetted creator amplification
-            community — India's first structured system for real,
-            algorithm-safe post amplification at scale.
+            Stop posting into silence. Turn every upload into meaningful reach,
+  stronger engagement, and momentum that compounds with every post.
           </p>
         </motion.div>
 
@@ -311,7 +342,7 @@ export default function WhatIsTorque() {
           transition={{ duration: 0.8, delay: 0.2 }}
           style={{
             maxWidth: "1320px",
-            margin: "0 auto 64px",
+            margin: "0 auto 5px",
             borderRadius: 28,
             overflow: "hidden",
             border: "1px solid rgba(59,130,246,.18)",
@@ -345,19 +376,7 @@ export default function WhatIsTorque() {
           />
         </motion.div>
 
-        {/* Feature Cards */}
-        <div
-          className="wit-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
-            gap: 24,
-          }}
-        >
-          {CARDS.map((card, i) => (
-            <TiltCard key={card.title} card={card} delay={i * 0.13} />
-          ))}
-        </div>
+        
       </div>
 
       <style>{`

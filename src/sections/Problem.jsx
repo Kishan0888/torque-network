@@ -75,18 +75,61 @@ function TiltCard({ p, delay }) {
 export default function Problem() {
   const [ref, inView] = useInView()
   return (
-    <section className="section-py" id="creators" style={{ position:'relative' }}>
+    <section
+  className="section-py"
+  id="creators"
+  style={{
+    position: "relative",
+    paddingTop: "0px",
+    paddingBottom: "96px",
+    marginTop: "-70px",
+  }}
+>
       <ConstellationBg/>
       <div className="container" style={{ position:'relative', zIndex:1 }}>
-        <motion.div ref={ref} initial={{opacity:0,y:24}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:0.7}}
-          style={{ textAlign:'center', marginBottom:64 }}>
-          <span className="section-tag" style={{ color:'#F87171' }}>The Problem Every Creator Faces</span>
-          <h2 style={{ fontSize:'clamp(2rem,4vw,3rem)', fontWeight:700, lineHeight:1.1, letterSpacing:'-0.03em' }}>
-            The system wasn't built<br/><span className="gradient-text">for creators.</span>
-          </h2>
-          <p style={{ fontSize:16, color:'#64748B', maxWidth:500, margin:'16px auto 0', lineHeight:1.7 }}>
-            Three compounding forces keep most creators invisible — no matter how good their content is.
-          </p>
+       <motion.div
+  ref={ref}
+  initial={{ opacity: 0, y: 24 }}
+  animate={inView ? { opacity: 1, y: 0 } : {}}
+  transition={{ duration: 0.7 }}
+  style={{ textAlign: "center", marginBottom: 52 }}
+>
+  <span
+    className="section-tag"
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 10,
+      padding: "12px 22px",
+      borderRadius: 999,
+      background: "rgba(13,19,38,0.65)",
+      border: "1px solid rgba(248,113,113,0.28)",
+      backdropFilter: "blur(14px)",
+    }}
+  >
+    <span
+      className="pulse-ring"
+      style={{
+        width: 9,
+        height: 9,
+        borderRadius: "50%",
+        background: "#F87171",
+        display: "inline-block",
+        boxShadow: "0 0 12px #F87171",
+      }}
+    />
+    <span
+      style={{
+        fontSize: "18px",
+        fontWeight: 800,
+        color: "#FFD4D4",
+        letterSpacing: "0.01em",
+      }}
+    >
+      The Problem Every Creator Faces
+    </span>
+  </span>
+          
         </motion.div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:24 }} className="problem-grid">
           {PROBLEMS.map((p,i)=><TiltCard key={p.title} p={p} delay={i*0.13}/>)}

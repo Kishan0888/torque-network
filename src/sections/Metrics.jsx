@@ -28,7 +28,7 @@ function Metric({ m, delay }) {
 export default function Metrics() {
   const [ref, inView] = useInView()
   return (
-    <section style={{ padding:'0 0 80px' }}>
+    <section style={{ padding: '0' }}>
       <div className="container">
         <motion.div ref={ref} initial={{opacity:0,y:20}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:0.7}}
           style={{ background:'rgba(13,19,38,0.55)', backdropFilter:'blur(20px)',

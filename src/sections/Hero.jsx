@@ -242,11 +242,29 @@ const toggleSound = async () => {
         <div className="hero-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:64, alignItems:'center' }}>
           <div>
             <motion.div {...fadeUp(0.1)}>
-              <span className="section-tag">
-                <span style={{ width:7, height:7, borderRadius:'50%', background:'#22D3EE', display:'inline-block' }} className="pulse-ring"/>
-                A structured amplification network for Instagram creators
-              </span>
-            </motion.div>
+  <span className="section-tag">
+    <span
+      style={{
+        width: 7,
+        height: 7,
+        borderRadius: '50%',
+        background: '#22D3EE',
+        display: 'inline-block'
+      }}
+      className="pulse-ring"
+    />
+    <span
+      style={{
+        fontSize: '16px',
+        fontWeight: 700,
+        color: '#EAF4FF',
+        letterSpacing: '0.01em'
+      }}
+    >
+      A structured amplification network for Instagram creators
+    </span>
+  </span>
+</motion.div>
             <motion.h1 {...fadeUp(0.22)} style={{ fontSize:'clamp(2.8rem,5vw,5.2rem)', fontWeight:700, lineHeight:1.04, letterSpacing:'-0.035em', marginBottom:22 }}>
               Only 3–7% of Your Followers
 See Your Posts.<br/>
@@ -462,7 +480,7 @@ See Your Posts.<br/>
               border:'1px solid rgba(59,130,246,0.22)', borderRadius:20, padding:'16px 20px', width:178 }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
                 <Sparkles size={14} color="#F59E0B"/>
-                <span style={{ fontSize:11, color:'#94A3B8', fontWeight:500 }}>Brand Match</span>
+                <span style={{ fontSize:11, color:'#94A3B8', fontWeight:500 }}>Creator Network</span>
               </div>
               <div style={{ fontSize:15, fontWeight:700, color:'#F8FAFC', fontFamily:'Space Grotesk' }}>Finance Niche</div>
               <div style={{ fontSize:11.5, color:'#22D3EE', marginTop:5, display:'flex', alignItems:'center', gap:5 }}>

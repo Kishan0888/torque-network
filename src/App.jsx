@@ -66,14 +66,16 @@ export default function App() {
         {/* 5 — What Is Torque */}
         <WhatIsTorque />
         <D/>
-        <DifferentCreators />
+        
         {/* 6 — Member Benefits */}
         <MemberBenefits />
         <D/>
+        <RealBenefits />
+        <DifferentCreators />
         {/* 7 — Growth Journey */}
         <GrowthJourney />
         <D/>
-        <RealBenefits />
+        
         {/* 8 — Creator Timeline */}
         <CreatorTimeline />
         <D/>

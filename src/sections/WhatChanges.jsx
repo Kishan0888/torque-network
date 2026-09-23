@@ -190,7 +190,7 @@ export default function Problem() {
             The Problem Every Creator Faces
           </span>
 
-          <h2
+          {/* <h2
             style={{
               fontSize: "clamp(2rem,4vw,3.2rem)",
               lineHeight: 1.08,
@@ -215,7 +215,7 @@ export default function Problem() {
           >
             Three compounding forces keep most creators invisible — no matter
             how good their content is.
-          </p>
+          </p> */}
         </motion.div>
 
         <motion.div
