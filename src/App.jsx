@@ -93,11 +93,11 @@ export default function App() {
         <Obligations />
         <D/>
         {/* 14 — Creator Wall */}
-        <CreatorWall />
-        <D/>
+        {/* <CreatorWall />
+        <D/> */}
         {/* 15 — For Brands */}
-        <section id="brands"><ForBrands /></section>
-        <D/>
+        {/* <section id="brands"><ForBrands /></section>
+        <D/> */}
         {/* 16 — Community Application */}
         <section id="community"><Community /></section>
         <D/>
