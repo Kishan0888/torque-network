@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You're In! | Torque Network</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:Inter,sans-serif;
+background:#020617;
+color:white;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+overflow:hidden;
+position:relative;
+}
+body:before{
+content:"";
+position:absolute;
+inset:0;
+background:
+radial-gradient(circle at 20% 30%,rgba(59,130,246,.18),transparent 45%),
+radial-gradient(circle at 80% 70%,rgba(34,211,238,.12),transparent 40%);
+filter:blur(30px);
+}
+.card{
+position:relative;
+z-index:2;
+max-width:620px;
+width:92%;
+background:rgba(8,15,35,.72);
+backdrop-filter:blur(22px);
+border:1px solid rgba(59,130,246,.15);
+border-radius:28px;
+padding:52px 40px;
+text-align:center;
+box-shadow:0 20px 80px rgba(0,0,0,.45);
+}
+.logo{
+height:54px;
+margin-bottom:28px;
+}
+.tick{
+width:82px;
+height:82px;
+margin:0 auto 24px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+background:linear-gradient(135deg,#22D3EE,#3B82F6);
+font-size:40px;
+font-weight:800;
+box-shadow:0 0 35px rgba(34,211,238,.45);
+animation:pop .6s ease;
+}
+@keyframes pop{
+0%{transform:scale(.4);opacity:0}
+70%{transform:scale(1.1)}
+100%{transform:scale(1)}
+}
+.badge{
+display:inline-block;
+padding:10px 18px;
+border-radius:999px;
+background:rgba(245,158,11,.12);
+border:1px solid rgba(245,158,11,.3);
+color:#FBBF24;
+font-size:14px;
+font-weight:700;
+margin-bottom:20px;
+}
+h1{
+font-family:"Space Grotesk",sans-serif;
+font-size:clamp(2rem,5vw,3rem);
+line-height:1.05;
+margin-bottom:18px;
+}
+.gradient{
+background:linear-gradient(135deg,#3B82F6,#22D3EE);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+}
+p{
+color:#94A3B8;
+font-size:17px;
+line-height:1.7;
+margin-bottom:30px;
+}
+.note{
+background:rgba(13,19,38,.8);
+border:1px solid rgba(59,130,246,.15);
+border-radius:18px;
+padding:18px;
+margin-bottom:28px;
+}
+.note strong{
+display:block;
+color:#F8FAFC;
+margin-bottom:8px;
+}
+.btn{
+display:flex;
+justify-content:center;
+align-items:center;
+gap:12px;
+text-decoration:none;
+padding:18px 26px;
+border-radius:18px;
+background:linear-gradient(180deg,#FBBF24,#F59E0B);
+color:#0B1120;
+font-weight:800;
+font-size:18px;
+box-shadow:0 12px 32px rgba(245,158,11,.35);
+transition:.25s;
+}
+.btn:hover{
+transform:translateY(-2px);
+box-shadow:0 18px 40px rgba(245,158,11,.5);
+}
+.small{
+margin-top:20px;
+font-size:14px;
+color:#64748B;
+}
+.footer{
+margin-top:28px;
+font-size:13px;
+color:#475569;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<img src="/logo.png" class="logo" alt="Torque Network">
+
+<div class="tick">✓</div>
+
+<div class="badge">🎉 You're on the Founding List</div>
+
+<h1>Welcome to <span class="gradient">Torque Network.</span></h1>
+
+<p>Your registration is confirmed. You're now one step closer to getting real early engagement from a community of active Instagram creators.</p>
+
+<div class="note">
+<strong>Important: Join the WhatsApp Community now.</strong>
+This is where creators receive onboarding updates, engagement instructions, and post-sharing access.
+</div>
+
+<a href="YOUR_WHATSAPP_LINK" target="_blank" class="btn">
+💬 Join WhatsApp Community
+</a>
+
+<div class="small">Takes less than 30 seconds.</div>
+
+<div class="footer">
+People Amplify Possibilities.
+</div>
+
+</div>
+
+</body>
+</html>
