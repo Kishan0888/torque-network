@@ -54,6 +54,14 @@ export default function App() {
       <main>
         {/* 1 */}
         <Hero />
+        <WhatChanges />
+        <D/>
+        {/* 5 — What Is Torque */}
+        <WhatIsTorque />
+        <D/>
+        <section id="how-it-works"><HowItWorks /></section>
+        <D/>
+        <RealBenefits />
         {/* 2 — Metrics */}
         <Metrics />
         <D/>
@@ -61,33 +69,31 @@ export default function App() {
         {/* <section id="creators"><Problem /></section>
         <D/> */}
         {/* 4 — What Changes */}
-        <WhatChanges />
-        <D/>
-        {/* 5 — What Is Torque */}
-        <WhatIsTorque />
-        <D/>
         
-        {/* 6 — Member Benefits */}
-        <MemberBenefits />
-        <D/>
-        <RealBenefits />
-        <DifferentCreators />
+        
+        {/* 9 — How It Works */}
+        
+        
         {/* 7 — Growth Journey */}
         <GrowthJourney />
         <D/>
+        {/* 6 — Member Benefits */}
+        {/* <MemberBenefits />
+        <D/> */}
+        
+        <DifferentCreators />
+        
         
         {/* 8 — Creator Timeline */}
         <CreatorTimeline />
         <D/>
-        {/* 9 — How It Works */}
-        <section id="how-it-works"><HowItWorks /></section>
-        <D/>
+        
         {/* 10 — India Map + Roadmap */}
-        <IndiaMap />
-        <D/>
+        {/* <IndiaMap />
+        <D/> */}
         {/* 11 — Founding Advantage */}
-        <FoundingAdvantage />
-        <D/>
+        {/* <FoundingAdvantage />
+        <D/> */}
         {/* 12 — Pricing */}
         <section id="pricing"><Pricing /></section>
         <D/>
