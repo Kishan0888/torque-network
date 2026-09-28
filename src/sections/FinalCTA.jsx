@@ -88,9 +88,9 @@ export default function FinalCTA() {
           <motion.div initial={{opacity:0,y:16}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:0.6}}
             style={{ display:'flex', flexWrap:'wrap', gap:28, justifyContent:'center', alignItems:'center' }}>
             {[
-              { icon:Mail,  text:'hello@torquenetwork.in' },
+              { icon:Mail,  text:'connect@torquenetwork.in' },
               { icon:Globe, text:'torquenetwork.in' },
-              { icon:Phone, text:'Reply with your email & number' },
+              { icon:Phone, text:'7303566443' },
             ].map(({ icon:Icon, text })=>(
               <div key={text} style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, color:'#475569' }}>
                 <Icon size={14} color="#3B82F6"/><span>{text}</span>
