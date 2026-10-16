@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from '../hooks/useInView'
 import { ArrowRight, Check, ChevronRight, Loader } from 'lucide-react'
 import { submitCreatorApplication } from '../hooks/useWeb3Forms'
+import { saveLeadToSheet } from '../hooks/useSheetLeads'
 
 /* ── Multi-step application form ─────────────── */
 const STEPS = [
@@ -152,6 +153,7 @@ export default function Community() {
     if (step < STEPS.length - 1) { setStep(s => s + 1); return }
     // Final step — submit to Web3Forms
     setLoading(true)
+    saveLeadToSheet(form)
     try {
       await submitCreatorApplication(form)
       setSubmitted(true)
