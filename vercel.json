@@ -1,12 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["bom1"],
   "rewrites": [
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/signup", "destination": "/index.html" },
-    { "source": "/forgot-password", "destination": "/index.html" },
-    { "source": "/reset-password", "destination": "/index.html" },
-    { "source": "/auth/callback", "destination": "/index.html" },
-    { "source": "/account", "destination": "/index.html" }
+    { "source": "/login", "destination": "/account.html" },
+    { "source": "/signup", "destination": "/account.html" },
+    { "source": "/forgot-password", "destination": "/account.html" },
+    { "source": "/reset-password", "destination": "/account.html" },
+    { "source": "/auth/callback", "destination": "/account.html" },
+    { "source": "/account", "destination": "/account.html" }
   ],
   "headers": [
     {

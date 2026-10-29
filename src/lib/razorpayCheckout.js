@@ -20,6 +20,15 @@ function loadScript() {
 }
 
 /**
+ * Start downloading Checkout ahead of time (e.g. when the subscribe button
+ * becomes visible) so it is ready the instant the user clicks. Safe to call
+ * repeatedly; failures are retried on the real click.
+ */
+export function preloadCheckout() {
+  loadScript().catch(() => {})
+}
+
+/**
  * Opens Razorpay Checkout for a server-created subscription.
  * Resolves with Razorpay's response on success, or null if the user closes it.
  */
@@ -31,7 +40,7 @@ export async function openSubscriptionCheckout({ keyId, subscriptionId, prefill 
       subscription_id: subscriptionId,
       name: 'Torque Network',
       description: 'Monthly membership',
-      image: `${window.location.origin}/logo.png`,
+      image: `${window.location.origin}/logo-sm.png`, // 53 KB instead of the 760 KB full-size logo
       prefill,
       theme: { color: '#3B82F6' },
       handler: (response) => resolve(response),

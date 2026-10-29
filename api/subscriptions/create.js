@@ -18,37 +18,50 @@ export const POST = handle(async (request) => {
   const planId = razorpayPlanId()
   const db = supabaseAdmin()
 
-  if (await isEntitled(user.id)) {
+  // Independent lookups run concurrently (previously sequential round trips).
+  const [entitled, rowsResult, profileResult] = await Promise.all([
+    isEntitled(user.id),
+    db
+      .from('subscriptions')
+      .select('razorpay_subscription_id, razorpay_plan_id, status')
+      .eq('user_id', user.id)
+      .in('status', [...BLOCKING_STATUSES, 'created', 'halted']),
+    db.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle(),
+  ])
+
+  if (entitled) {
     throw new HttpError(409, 'You already have an active membership.', { code: 'already_member' })
   }
+  if (rowsResult.error) throw rowsResult.error
+  const rows = rowsResult.data
+  const profile = profileResult.data
 
-  const { data: rows, error } = await db
-    .from('subscriptions')
-    .select('razorpay_subscription_id, razorpay_plan_id, status')
-    .eq('user_id', user.id)
-    .in('status', [...BLOCKING_STATUSES, 'created', 'halted'])
-  if (error) throw error
+  // Refresh every candidate from Razorpay in parallel, in case a webhook is still in flight.
+  const refreshed = await Promise.all(
+    rows.map(async (row) => {
+      const fresh = await syncSubscription(row.razorpay_subscription_id)
+      return { row, fresh, status: fresh?.status ?? row.status }
+    }),
+  )
 
-  let reusableId = null
-  for (const row of rows) {
-    // Refresh from Razorpay in case a webhook is still in flight.
-    const fresh = await syncSubscription(row.razorpay_subscription_id)
-    const status = fresh?.status ?? row.status
-
-    if (BLOCKING_STATUSES.includes(status)) {
-      throw new HttpError(409, 'You already have a membership in progress.', { code: 'subscription_in_progress' })
-    }
-    if (status === 'halted') {
-      // Payments stopped after failed retries; close it so it can't revive alongside a new one.
-      await razorpay.cancelSubscription(row.razorpay_subscription_id, false).catch((e) => {
-        if (!(e instanceof RazorpayError)) throw e
-      })
-      await syncSubscription(row.razorpay_subscription_id)
-    }
-    if (status === 'created' && fresh?.razorpay_plan_id === planId && !reusableId) {
-      reusableId = row.razorpay_subscription_id
-    }
+  if (refreshed.some(({ status }) => BLOCKING_STATUSES.includes(status))) {
+    throw new HttpError(409, 'You already have a membership in progress.', { code: 'subscription_in_progress' })
   }
+
+  // Payments stopped after failed retries; close them so they can't revive alongside a new one.
+  await Promise.all(
+    refreshed
+      .filter(({ status }) => status === 'halted')
+      .map(async ({ row }) => {
+        await razorpay.cancelSubscription(row.razorpay_subscription_id, false).catch((e) => {
+          if (!(e instanceof RazorpayError)) throw e
+        })
+        await syncSubscription(row.razorpay_subscription_id)
+      }),
+  )
+
+  const reusable = refreshed.find(({ status, fresh }) => status === 'created' && fresh?.razorpay_plan_id === planId)
+  const reusableId = reusable ? reusable.row.razorpay_subscription_id : null
 
   let subscriptionId = reusableId
   if (!subscriptionId) {
@@ -74,12 +87,6 @@ export const POST = handle(async (request) => {
     if (insertErr) throw insertErr
     subscriptionId = entity.id
   }
-
-  const { data: profile } = await db
-    .from('profiles')
-    .select('full_name, phone')
-    .eq('id', user.id)
-    .maybeSingle()
 
   return json({
     keyId,

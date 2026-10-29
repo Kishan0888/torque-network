@@ -9,15 +9,19 @@ import { supabaseAdmin } from '../_lib/supabaseAdmin.js'
 export const GET = handle(async (request) => {
   const user = await requireUser(request)
 
-  const { data: subscription, error } = await supabaseAdmin()
-    .from('subscriptions')
-    .select('status, current_start, current_end, charge_at, ended_at, paid_count, cancel_at_cycle_end, created_at')
-    .eq('user_id', user.id)
-    .neq('status', 'created')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // Both lookups run concurrently.
+  const [{ data: subscription, error }, entitled] = await Promise.all([
+    supabaseAdmin()
+      .from('subscriptions')
+      .select('status, current_start, current_end, charge_at, ended_at, paid_count, cancel_at_cycle_end, created_at')
+      .eq('user_id', user.id)
+      .neq('status', 'created')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    isEntitled(user.id),
+  ])
   if (error) throw error
 
-  return json({ entitled: await isEntitled(user.id), subscription: subscription ?? null })
+  return json({ entitled, subscription: subscription ?? null })
 })

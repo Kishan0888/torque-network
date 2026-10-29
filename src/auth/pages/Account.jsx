@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { apiFetch } from '../../lib/api'
-import { openSubscriptionCheckout } from '../../lib/razorpayCheckout'
+import { openSubscriptionCheckout, preloadCheckout } from '../../lib/razorpayCheckout'
 import { navigate } from '../../lib/router'
 import { useAuth } from '../AuthProvider'
 import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
@@ -69,11 +69,13 @@ export default function Account() {
     loadPayments()
   }, [loadMembership, loadPayments])
 
+  // Called only when the server has not yet seen the subscription as active
+  // (Razorpay's activation webhook can lag a few seconds behind the payment).
   async function waitForActivation() {
     for (let i = 0; i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 2000))
       const data = await loadMembership()
       if (data?.entitled) return true
-      await new Promise((r) => setTimeout(r, 2000))
     }
     return false
   }
@@ -81,6 +83,7 @@ export default function Account() {
   async function subscribe() {
     setNotice(null)
     setBusy(true)
+    preloadCheckout() // no-op if already loaded; otherwise downloads while the server creates the subscription
     try {
       const order = await apiFetch('/api/subscriptions/create', { method: 'POST' })
       const result = await openSubscriptionCheckout(order)
@@ -89,9 +92,12 @@ export default function Account() {
         return
       }
       setNotice(['info', 'Payment received — confirming your membership…'])
-      await apiFetch('/api/subscriptions/verify', { method: 'POST', body: result })
-      const active = await waitForActivation()
-      await loadPayments()
+      const verified = await apiFetch('/api/subscriptions/verify', { method: 'POST', body: result })
+      // verify already reports server-side entitlement; only poll if it isn't active yet.
+      const [active] = await Promise.all([
+        verified.entitled ? loadMembership().then(() => true) : waitForActivation(),
+        loadPayments(),
+      ])
       setNotice(active
         ? ['success', 'Your membership is active. Welcome aboard!']
         : ['info', 'Payment verified. Activation can take a minute — refresh this page shortly.'])
@@ -128,6 +134,14 @@ export default function Account() {
   const [statusLabel, statusTone] = sub ? STATUS_COPY[sub.status] || [sub.status, 'info'] : []
   const canCancel = sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status) && !sub.cancel_at_cycle_end
   const canSubscribe = membership && !membership.entitled && !(sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status))
+
+  // Download Razorpay Checkout as soon as the page opens (unless the user is
+  // already a member), in parallel with loading membership status, so clicking
+  // the subscribe button only waits for the server, not for the script.
+  const entitled = membership?.entitled
+  useEffect(() => {
+    if (!entitled) preloadCheckout()
+  }, [entitled])
 
   return (
     <AuthShell title="Your account" subtitle={user.email} wide>

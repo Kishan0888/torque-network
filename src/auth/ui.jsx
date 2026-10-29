@@ -11,7 +11,7 @@ export function AuthShell({ title, subtitle, children, wide = false }) {
       }} />
       <header style={{ position: 'relative', zIndex: 1, padding: '20px 24px', display: 'flex', justifyContent: 'center' }}>
         <a href="/" aria-label="Torque Network home">
-          <img src="/logo.png" alt="Torque Network" style={{ height: 52, width: 'auto', filter: 'drop-shadow(0 0 10px rgba(59,130,246,.5))' }} />
+          <img src="/logo-sm.png" alt="Torque Network" style={{ height: 52, width: 'auto', filter: 'drop-shadow(0 0 10px rgba(59,130,246,.5))' }} />
         </a>
       </header>
       <main style={{ position: 'relative', zIndex: 1, padding: '24px 16px 72px', display: 'flex', justifyContent: 'center' }}>
