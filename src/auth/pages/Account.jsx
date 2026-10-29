@@ -5,10 +5,21 @@ import { openSubscriptionCheckout, preloadCheckout } from '../../lib/razorpayChe
 import { navigate } from '../../lib/router'
 import { useAuth } from '../AuthProvider'
 import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
+import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, RotateCcw, Zap, Loader } from 'lucide-react'
 
 // Display only. The amount actually charged comes from the Razorpay plan
-// (RAZORPAY_PLAN_ID on the server); keep this label in sync with that plan.
-const PRICE_LABEL = '₹750 / month'
+// (RAZORPAY_PLAN_ID on the server); keep these labels in sync with that plan.
+const PLAN_PRICE = '₹750'
+const PRICE_LABEL = `${PLAN_PRICE} / month`
+
+// Same benefit wording as the public pricing card (src/sections/Pricing.jsx).
+const INCLUDED = [
+  '500–2,500 real creators watch, save and share your post',
+  'Engagement within 48 hours, staggered naturally',
+  'A professionally managed network, open to every creator category',
+  'Access to a vetted community of 10,000+ influencers',
+  'A network that grows with you at no extra cost',
+]
 
 const STATUS_COPY = {
   active: ['Active', 'success'],
@@ -135,6 +146,19 @@ export default function Account() {
   const canCancel = sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status) && !sub.cancel_at_cycle_end
   const canSubscribe = membership && !membership.entitled && !(sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status))
 
+  const statusLines = sub ? [
+    sub.current_end && (
+      <div key="end">
+        {sub.status === 'active' && !sub.cancel_at_cycle_end ? 'Renews on' : 'Access until'}{' '}
+        <strong style={{ color: '#E2E8F0' }}>{fmtDate(sub.current_end)}</strong>
+      </div>
+    ),
+    sub.cancel_at_cycle_end && sub.status === 'active' && <div key="cancel">Cancellation scheduled — no further charges.</div>,
+    sub.status === 'pending' && <div key="pending">Your last renewal failed; Razorpay will retry automatically. Access continues meanwhile.</div>,
+    sub.status === 'halted' && <div key="halted">Renewal payments failed. Start a new membership below to restore access.</div>,
+  ].filter(Boolean) : []
+  const statusDetails = statusLines.length ? <div style={{ ...muted, display: 'grid', gap: 4 }}>{statusLines}</div> : null
+
   // Download Razorpay Checkout as soon as the page opens (unless the user is
   // already a member), in parallel with loading membership status, so clicking
   // the subscribe button only waits for the server, not for the script.
@@ -147,44 +171,97 @@ export default function Account() {
     <AuthShell title="Your account" subtitle={user.email} wide>
       {notice && <Notice tone={notice[0]}>{notice[1]}</Notice>}
 
-      <section style={card} aria-labelledby="membership-h">
-        <h2 id="membership-h" style={h2}>Membership</h2>
+      <section style={{ ...card, ...memberCard }} aria-labelledby="membership-h" className="member-card">
+        <div aria-hidden style={memberGlowLine} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+          <h2 id="membership-h" style={{ ...h2, fontSize: 20, marginBottom: 0 }}>Your Membership</h2>
+          {sub && <Badge tone={statusTone}>{statusLabel}</Badge>}
+        </div>
+
         {membershipError && <Notice tone="error">{membershipError}</Notice>}
         {!membership && !membershipError && <p style={muted}>Loading membership…</p>}
         {membership && (
           <>
-            {sub ? (
-              <div style={{ ...muted, marginBottom: 14 }}>
-                <div>Status: <Badge tone={statusTone}>{statusLabel}</Badge></div>
-                {sub.current_end && (
-                  <div>
-                    {sub.status === 'active' && !sub.cancel_at_cycle_end ? 'Renews on' : 'Access until'}{' '}
-                    <strong style={{ color: '#E2E8F0' }}>{fmtDate(sub.current_end)}</strong>
-                  </div>
-                )}
-                {sub.cancel_at_cycle_end && sub.status === 'active' && <div>Cancellation scheduled — no further charges.</div>}
-                {sub.status === 'pending' && <div>Your last renewal failed; Razorpay will retry automatically. Access continues meanwhile.</div>}
-                {sub.status === 'halted' && <div>Renewal payments failed. Start a new membership below to restore access.</div>}
+            {/* Product line */}
+            <div style={productRow} className="member-product">
+              <div style={productIcon} aria-hidden><Sparkles size={22} color="#fff" /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#22D3EE', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+                  Torque Network
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>Standard Member</div>
+                <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Monthly membership · Renews automatically</div>
               </div>
-            ) : (
-              <p style={{ ...muted, marginBottom: 14 }}>You don’t have a membership yet.</p>
-            )}
-
-            {membership.entitled && <Notice tone="success">You have full member access.</Notice>}
-
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {canSubscribe && (
-                <button type="button" className="btn-primary" disabled={busy} onClick={subscribe}>
-                  {busy ? 'Please wait…' : `Become a member — ${PRICE_LABEL}`}
-                </button>
-              )}
-              {canCancel && (
-                <button type="button" className="btn-ghost" disabled={busy} onClick={cancel}>Cancel membership</button>
-              )}
+              <div style={{ textAlign: 'right' }} className="member-price">
+                <div style={priceText}>{PLAN_PRICE}</div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>per month</div>
+              </div>
             </div>
-            {canSubscribe && <p style={{ ...muted, fontSize: 12, marginTop: 10 }}>Billed monthly via Razorpay. Cancel anytime from this page.</p>}
+
+            {/* What's included */}
+            <div style={{ margin: '20px 0 4px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 12 }}>What’s included</div>
+              <ul style={{ listStyle: 'none', display: 'grid', gap: 10 }} className="member-includes">
+                {INCLUDED.map((item) => (
+                  <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#CBD5E1', lineHeight: 1.5 }}>
+                    <span style={checkDot} aria-hidden><Check size={10} color="#22D3EE" strokeWidth={3} /></span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {canSubscribe ? (
+              <>
+                {sub && statusDetails && <div style={{ ...summaryBox, marginBottom: 0 }}>{statusDetails}</div>}
+                {/* Order summary */}
+                <div style={summaryBox} aria-label="Order summary">
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 10 }}>Order summary</div>
+                  <SummaryRow label="Plan" value="Standard Member" />
+                  <SummaryRow label="Billing" value="Monthly, until you cancel" />
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>Due today</span>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk', letterSpacing: '-0.02em' }}>{PLAN_PRICE}</span>
+                  </div>
+                </div>
+
+                <button type="button" className="btn-primary" disabled={busy} onClick={subscribe} style={checkoutBtn(busy)}>
+                  {busy ? (
+                    <><Loader size={17} style={{ animation: 'member-spin 0.8s linear infinite' }} /> Opening secure checkout…</>
+                  ) : (
+                    <><Lock size={16} /> Proceed to Checkout<span className="member-btn-price">&nbsp;· {PRICE_LABEL}</span> <ArrowRight size={17} /></>
+                  )}
+                </button>
+
+                <div style={trustRow} className="member-trust">
+                  <span style={trustItem}><ShieldCheck size={14} color="#22C55E" /> Secure payment via Razorpay</span>
+                  <span style={trustItem}><RotateCcw size={14} color="#22D3EE" /> Cancel anytime from this page</span>
+                  <span style={trustItem}><Zap size={14} color="#F59E0B" /> Access starts after payment</span>
+                </div>
+              </>
+            ) : (
+              <div style={summaryBox}>
+                {sub ? statusDetails : <p style={muted}>You don’t have a membership yet.</p>}
+                {membership.entitled && <div style={{ marginTop: 12 }}><Notice tone="success">You have full member access.</Notice></div>}
+                {canCancel && (
+                  <button type="button" className="btn-ghost" disabled={busy} onClick={cancel} style={{ marginTop: 4 }}>Cancel membership</button>
+                )}
+              </div>
+            )}
           </>
         )}
+        <style>{`
+          @keyframes member-spin { to { transform: rotate(360deg); } }
+          @media (max-width: 520px) {
+            .member-card { padding: 22px 16px !important; }
+            .member-product { flex-wrap: wrap; }
+            .member-price { text-align: left !important; width: 100%; padding-left: 60px; }
+            .member-trust { flex-direction: column; align-items: flex-start !important; }
+          }
+          @media (max-width: 430px) { .member-btn-price { display: none; } }
+        `}</style>
       </section>
 
       <section style={card} aria-labelledby="payments-h">
@@ -217,6 +294,58 @@ export default function Account() {
       <ProfileSection userId={user.id} />
       <SecuritySection />
     </AuthShell>
+  )
+}
+
+// ── Membership (order summary) styles ──────────────────────────
+const memberCard = {
+  position: 'relative', overflow: 'hidden', padding: '26px 26px',
+  background: 'linear-gradient(180deg, rgba(13,19,38,0.95), rgba(5,8,22,0.9))',
+  border: '1px solid rgba(59,130,246,0.28)',
+  boxShadow: '0 0 0 1px rgba(34,211,238,0.04) inset, 0 18px 50px rgba(0,0,0,0.45), 0 0 40px rgba(59,130,246,0.08)',
+}
+const memberGlowLine = {
+  position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+  background: 'linear-gradient(90deg, transparent, #3B82F6, #22D3EE, transparent)',
+}
+const productRow = {
+  display: 'flex', alignItems: 'center', gap: 16, padding: '16px 16px', borderRadius: 16,
+  background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.18)',
+}
+const productIcon = {
+  width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: 'linear-gradient(135deg, #2563EB, #22D3EE)', boxShadow: '0 0 24px rgba(34,211,238,0.35)',
+}
+const priceText = {
+  fontSize: 30, fontWeight: 700, fontFamily: 'Space Grotesk', letterSpacing: '-0.03em', lineHeight: 1,
+  background: 'linear-gradient(135deg, #3B82F6, #22D3EE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+}
+const checkDot = {
+  width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.35)',
+}
+const summaryBox = {
+  marginTop: 18, marginBottom: 18, padding: '16px 18px', borderRadius: 14,
+  background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+}
+const checkoutBtn = (busy) => ({
+  width: '100%', justifyContent: 'center', padding: '17px 24px', fontSize: 16, fontWeight: 700, borderRadius: 14,
+  boxShadow: '0 10px 30px rgba(37,99,235,0.35), 0 0 30px rgba(34,211,238,0.15)',
+  opacity: busy ? 0.8 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'normal',
+})
+const trustRow = {
+  display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '8px 18px', marginTop: 14,
+}
+const trustItem = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94A3B8' }
+
+function SummaryRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, padding: '4px 0' }}>
+      <span style={{ color: '#94A3B8' }}>{label}</span>
+      <span style={{ color: '#E2E8F0', fontWeight: 600, textAlign: 'right' }}>{value}</span>
+    </div>
   )
 }
 
