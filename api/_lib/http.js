@@ -26,6 +26,24 @@ export async function readJson(request) {
   }
 }
 
+/** Like readJson, but an empty body is treated as {} (older clients send no body). */
+export async function readOptionalJson(request) {
+  const text = await request.text()
+  if (!text.trim()) return {}
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new HttpError(400, 'Request body must be valid JSON.')
+  }
+}
+
+/** Resolve and validate the requested subscription product (defaults to Instagram). */
+export function productFromBody(body, products, fallback) {
+  const product = body?.product ?? fallback
+  if (!products.includes(product)) throw new HttpError(400, 'Unknown membership type.')
+  return product
+}
+
 /** Wrap a handler so errors become safe JSON responses (no stack traces or secrets). */
 export function handle(fn) {
   return async (request) => {

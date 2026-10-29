@@ -36,6 +36,35 @@ export function razorpayPlanId() {
   return required('RAZORPAY_PLAN_ID')
 }
 
+/**
+ * Subscription products. Each maps to its own Razorpay plan via its own env
+ * variable; the browser only ever sends the product key, never a plan id.
+ *   instagram -> RAZORPAY_PLAN_ID          (existing ₹750/month plan, unchanged)
+ *   linkedin  -> RAZORPAY_LINKEDIN_PLAN_ID (₹500/month plan)
+ */
+export const PRODUCTS = ['instagram', 'linkedin']
+export const DEFAULT_PRODUCT = 'instagram'
+
+export function planIdForProduct(product) {
+  if (product === 'instagram') return razorpayPlanId()
+  if (product === 'linkedin') return required('RAZORPAY_LINKEDIN_PLAN_ID')
+  throw new Error(`Unknown product: ${product}`)
+}
+
+/** LinkedIn plan id if configured, else null (LinkedIn is then unavailable). */
+export function linkedinPlanIdOrNull() {
+  return process.env.RAZORPAY_LINKEDIN_PLAN_ID || null
+}
+
+/**
+ * Which product a stored subscription belongs to. Only the LinkedIn plan id
+ * marks LinkedIn; every other plan is Instagram, so existing Instagram rows
+ * behave exactly as before.
+ */
+export function productForPlanId(planId, linkedinPlanId = linkedinPlanIdOrNull()) {
+  return linkedinPlanId && planId === linkedinPlanId ? 'linkedin' : 'instagram'
+}
+
 export function razorpayWebhookSecret() {
   return required('RAZORPAY_WEBHOOK_SECRET')
 }

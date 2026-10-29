@@ -19,10 +19,10 @@ member accounts and Razorpay recurring subscriptions.
 
 | Route | Auth | Purpose |
 | --- | --- | --- |
-| `POST /api/subscriptions/create` | Bearer (verified email) | Create/reuse a Razorpay subscription for `RAZORPAY_PLAN_ID`; returns `keyId` + `subscriptionId` for Checkout. |
+| `POST /api/subscriptions/create` | Bearer (verified email) | Body `{ product: "instagram" \| "linkedin" }` (default `instagram`). Create/reuse a Razorpay subscription for that product's plan (`RAZORPAY_PLAN_ID` / `RAZORPAY_LINKEDIN_PLAN_ID`); returns `keyId` + `subscriptionId` for Checkout. The two memberships are independent. |
 | `POST /api/subscriptions/verify` | Bearer | Verify `HMAC_SHA256(payment_id + "|" + subscription_id, key_secret)` against the server-stored id, then sync state from Razorpay. |
-| `POST /api/subscriptions/cancel` | Bearer | Cancel at cycle end (active) or immediately (no active cycle). |
-| `GET /api/subscriptions/me` | Bearer | Server-enforced entitlement + latest subscription. |
+| `POST /api/subscriptions/cancel` | Bearer | Body `{ product }` (default `instagram`). Cancel that product's subscription at cycle end (active) or immediately (no active cycle). |
+| `GET /api/subscriptions/me` | Bearer | Server-enforced entitlement + latest subscription, plus `products.instagram` / `products.linkedin`. |
 | `POST /api/razorpay/webhook` | `X-Razorpay-Signature` | Verified over the raw body; idempotent on `x-razorpay-event-id`; re-fetches the subscription from Razorpay so out-of-order events can't regress state. |
 
 Members-only API routes should call `requireEntitlement(request)` from `api/_lib/auth.js`.

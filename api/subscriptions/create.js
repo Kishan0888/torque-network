@@ -3,38 +3,49 @@
  * Creates (or reuses) a Razorpay subscription for the signed-in, verified user
  * and returns what the browser needs to open Razorpay Checkout. The plan id,
  * amount and key secret never come from the browser.
+ *
+ * Body (optional): { "product": "instagram" | "linkedin" } — defaults to
+ * "instagram". Each product uses its own Razorpay plan, and all checks below
+ * are scoped to that product, so the two memberships are fully independent.
  */
-import { handle, json, HttpError } from '../_lib/http.js'
-import { requireUser, isEntitled } from '../_lib/auth.js'
+import { handle, json, HttpError, readOptionalJson, productFromBody } from '../_lib/http.js'
+import { requireUser } from '../_lib/auth.js'
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js'
 import { razorpay, RazorpayError } from '../_lib/razorpay.js'
-import { razorpayConfig, razorpayPlanId, SUBSCRIPTION_TOTAL_COUNT } from '../_lib/env.js'
+import {
+  razorpayConfig, planIdForProduct, productForPlanId, linkedinPlanIdOrNull,
+  PRODUCTS, DEFAULT_PRODUCT, SUBSCRIPTION_TOTAL_COUNT,
+} from '../_lib/env.js'
 import { syncSubscription } from '../_lib/sync.js'
-import { BLOCKING_STATUSES, subscriptionRowFromEntity } from '../_lib/subscriptionState.js'
+import { BLOCKING_STATUSES, subscriptionRowFromEntity, rowGrantsAccess } from '../_lib/subscriptionState.js'
 
 export const POST = handle(async (request) => {
   const user = await requireUser(request)
+  const product = productFromBody(await readOptionalJson(request), PRODUCTS, DEFAULT_PRODUCT)
   const { keyId } = razorpayConfig()
-  const planId = razorpayPlanId()
+  const planId = planIdForProduct(product)
+  const linkedinPlanId = linkedinPlanIdOrNull()
   const db = supabaseAdmin()
 
-  // Independent lookups run concurrently (previously sequential round trips).
-  const [entitled, rowsResult, profileResult] = await Promise.all([
-    isEntitled(user.id),
+  // Independent lookups run concurrently.
+  const [subsResult, profileResult] = await Promise.all([
     db
       .from('subscriptions')
-      .select('razorpay_subscription_id, razorpay_plan_id, status')
-      .eq('user_id', user.id)
-      .in('status', [...BLOCKING_STATUSES, 'created', 'halted']),
+      .select('razorpay_subscription_id, razorpay_plan_id, status, current_end')
+      .eq('user_id', user.id),
     db.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle(),
   ])
+  if (subsResult.error) throw subsResult.error
+  const profile = profileResult.data
 
-  if (entitled) {
+  // Only this product's subscriptions matter (Instagram and LinkedIn are independent).
+  const productRows = subsResult.data.filter((r) => productForPlanId(r.razorpay_plan_id, linkedinPlanId) === product)
+
+  // Same rule as public.is_entitled(), applied to this product only.
+  if (productRows.some((r) => rowGrantsAccess(r))) {
     throw new HttpError(409, 'You already have an active membership.', { code: 'already_member' })
   }
-  if (rowsResult.error) throw rowsResult.error
-  const rows = rowsResult.data
-  const profile = profileResult.data
+  const rows = productRows.filter((r) => [...BLOCKING_STATUSES, 'created', 'halted'].includes(r.status))
 
   // Refresh every candidate from Razorpay in parallel, in case a webhook is still in flight.
   const refreshed = await Promise.all(
@@ -72,7 +83,7 @@ export const POST = handle(async (request) => {
         total_count: SUBSCRIPTION_TOTAL_COUNT,
         quantity: 1,
         customer_notify: 1,
-        notes: { user_id: user.id, email: user.email ?? '' },
+        notes: { user_id: user.id, email: user.email ?? '', product },
       })
     } catch (e) {
       if (e instanceof RazorpayError) {

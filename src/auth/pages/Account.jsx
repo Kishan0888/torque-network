@@ -5,21 +5,42 @@ import { openSubscriptionCheckout, preloadCheckout } from '../../lib/razorpayChe
 import { navigate } from '../../lib/router'
 import { useAuth } from '../AuthProvider'
 import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
-import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, RotateCcw, Zap, Loader } from 'lucide-react'
+import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, Briefcase, RotateCcw, Zap, Loader } from 'lucide-react'
 
-// Display only. The amount actually charged comes from the Razorpay plan
-// (RAZORPAY_PLAN_ID on the server); keep these labels in sync with that plan.
-const PLAN_PRICE = '₹750'
-const PRICE_LABEL = `${PLAN_PRICE} / month`
-
-// Same benefit wording as the public pricing card (src/sections/Pricing.jsx).
-const INCLUDED = [
-  '500–2,500 real creators watch, save and share your post',
-  'Engagement within 48 hours, staggered naturally',
-  'A professionally managed network, open to every creator category',
-  'Access to a vetted community of 10,000+ influencers',
-  'A network that grows with you at no extra cost',
+// Display only. The amount actually charged comes from each product's Razorpay
+// plan on the server (instagram -> RAZORPAY_PLAN_ID, linkedin ->
+// RAZORPAY_LINKEDIN_PLAN_ID); keep these labels in sync with those plans.
+// The browser only sends the product key; the server picks the plan id.
+const PLANS = [
+  {
+    key: 'instagram',
+    eyebrow: 'Torque for Instagram',
+    name: 'Standard Member',
+    price: '₹750',
+    Icon: Sparkles,
+    // Same benefit wording as the public pricing card (src/sections/Pricing.jsx).
+    included: [
+      '500–2,500 real creators watch, save and share your post',
+      'Engagement within 48 hours, staggered naturally',
+      'A professionally managed network, open to every creator category',
+      'Access to a vetted community of 10,000+ influencers',
+      'A network that grows with you at no extra cost',
+    ],
+  },
+  {
+    key: 'linkedin',
+    eyebrow: 'Torque for LinkedIn',
+    name: 'LinkedIn Professional',
+    price: '₹500',
+    Icon: Briefcase,
+    included: [
+      'Share your LinkedIn posts with the Torque Network community',
+      'Genuine engagement from fellow members on your posts',
+      'A professionally managed network for LinkedIn professionals',
+    ],
+  },
 ]
+const priceLabel = (plan) => `${plan.price} / month`
 
 const STATUS_COPY = {
   active: ['Active', 'success'],
@@ -49,7 +70,7 @@ export default function Account() {
   const [membership, setMembership] = useState(null) // { entitled, subscription }
   const [membershipError, setMembershipError] = useState('')
   const [payments, setPayments] = useState([])
-  const [busy, setBusy] = useState(false)
+  const [busyProduct, setBusyProduct] = useState(null) // product key while an action runs
   const [notice, setNotice] = useState(() =>
     new URLSearchParams(window.location.search).get('verified') ? ['success', 'Email verified — welcome to Torque Network!'] : null,
   )
@@ -82,21 +103,21 @@ export default function Account() {
 
   // Called only when the server has not yet seen the subscription as active
   // (Razorpay's activation webhook can lag a few seconds behind the payment).
-  async function waitForActivation() {
+  async function waitForActivation(product) {
     for (let i = 0; i < 10; i++) {
       await new Promise((r) => setTimeout(r, 2000))
       const data = await loadMembership()
-      if (data?.entitled) return true
+      if (data?.products?.[product]?.entitled) return true
     }
     return false
   }
 
-  async function subscribe() {
+  async function subscribe(plan) {
     setNotice(null)
-    setBusy(true)
+    setBusyProduct(plan.key)
     preloadCheckout() // no-op if already loaded; otherwise downloads while the server creates the subscription
     try {
-      const order = await apiFetch('/api/subscriptions/create', { method: 'POST' })
+      const order = await apiFetch('/api/subscriptions/create', { method: 'POST', body: { product: plan.key } })
       const result = await openSubscriptionCheckout(order)
       if (!result) {
         setNotice(['info', 'Checkout closed. You have not been charged.'])
@@ -104,32 +125,31 @@ export default function Account() {
       }
       setNotice(['info', 'Payment received — confirming your membership…'])
       const verified = await apiFetch('/api/subscriptions/verify', { method: 'POST', body: result })
-      // verify already reports server-side entitlement; only poll if it isn't active yet.
+      // verify reports this subscription's fresh status; only poll if it isn't active yet.
       const [active] = await Promise.all([
-        verified.entitled ? loadMembership().then(() => true) : waitForActivation(),
+        verified.status === 'active' ? loadMembership().then(() => true) : waitForActivation(plan.key),
         loadPayments(),
       ])
       setNotice(active
-        ? ['success', 'Your membership is active. Welcome aboard!']
+        ? ['success', `Your ${plan.eyebrow} membership is active. Welcome aboard!`]
         : ['info', 'Payment verified. Activation can take a minute — refresh this page shortly.'])
     } catch (e) {
       setNotice(['error', e.message])
       await loadMembership()
     } finally {
-      setBusy(false)
+      setBusyProduct(null)
     }
   }
 
-  async function cancel() {
-    const sub = membership?.subscription
+  async function cancel(plan, sub) {
     const msg = sub?.status === 'active'
-      ? `Cancel your membership? You'll keep access until ${fmtDate(sub.current_end)} and won't be charged again.`
-      : 'Cancel your membership now?'
+      ? `Cancel your ${plan.eyebrow} membership? You'll keep access until ${fmtDate(sub.current_end)} and won't be charged again.`
+      : `Cancel your ${plan.eyebrow} membership now?`
     if (!window.confirm(msg)) return
     setNotice(null)
-    setBusy(true)
+    setBusyProduct(plan.key)
     try {
-      const res = await apiFetch('/api/subscriptions/cancel', { method: 'POST' })
+      const res = await apiFetch('/api/subscriptions/cancel', { method: 'POST', body: { product: plan.key } })
       setNotice(['success', res.atCycleEnd
         ? `Cancellation scheduled. Access continues until ${fmtDate(res.accessUntil)}.`
         : 'Your membership has been cancelled.'])
@@ -137,132 +157,51 @@ export default function Account() {
     } catch (e) {
       setNotice(['error', e.message])
     } finally {
-      setBusy(false)
+      setBusyProduct(null)
     }
   }
 
-  const sub = membership?.subscription
-  const [statusLabel, statusTone] = sub ? STATUS_COPY[sub.status] || [sub.status, 'info'] : []
-  const canCancel = sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status) && !sub.cancel_at_cycle_end
-  const canSubscribe = membership && !membership.entitled && !(sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status))
+  // Per-product state from /api/subscriptions/me (older responses: Instagram only).
+  const productState = (key) =>
+    membership?.products?.[key] ??
+    (key === 'instagram' && membership ? { available: true, entitled: membership.entitled, subscription: membership.subscription } : null)
+  const visiblePlans = PLANS.filter((plan) => productState(plan.key)?.available)
 
-  const statusLines = sub ? [
-    sub.current_end && (
-      <div key="end">
-        {sub.status === 'active' && !sub.cancel_at_cycle_end ? 'Renews on' : 'Access until'}{' '}
-        <strong style={{ color: '#E2E8F0' }}>{fmtDate(sub.current_end)}</strong>
-      </div>
-    ),
-    sub.cancel_at_cycle_end && sub.status === 'active' && <div key="cancel">Cancellation scheduled — no further charges.</div>,
-    sub.status === 'pending' && <div key="pending">Your last renewal failed; Razorpay will retry automatically. Access continues meanwhile.</div>,
-    sub.status === 'halted' && <div key="halted">Renewal payments failed. Start a new membership below to restore access.</div>,
-  ].filter(Boolean) : []
-  const statusDetails = statusLines.length ? <div style={{ ...muted, display: 'grid', gap: 4 }}>{statusLines}</div> : null
-
-  // Download Razorpay Checkout as soon as the page opens (unless the user is
-  // already a member), in parallel with loading membership status, so clicking
-  // the subscribe button only waits for the server, not for the script.
-  const entitled = membership?.entitled
+  // Download Razorpay Checkout as soon as the page opens (unless the user
+  // already has every membership), in parallel with loading membership status,
+  // so clicking a checkout button only waits for the server, not for the script.
+  const needsCheckout = !membership || visiblePlans.some((plan) => !productState(plan.key)?.entitled)
   useEffect(() => {
-    if (!entitled) preloadCheckout()
-  }, [entitled])
+    if (needsCheckout) preloadCheckout()
+  }, [needsCheckout])
 
   return (
     <AuthShell title="Your account" subtitle={user.email} wide>
       {notice && <Notice tone={notice[0]}>{notice[1]}</Notice>}
 
-      <section style={{ ...card, ...memberCard }} aria-labelledby="membership-h" className="member-card">
-        <div aria-hidden style={memberGlowLine} />
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
-          <h2 id="membership-h" style={{ ...h2, fontSize: 20, marginBottom: 0 }}>Your Membership</h2>
-          {sub && <Badge tone={statusTone}>{statusLabel}</Badge>}
-        </div>
-
-        {membershipError && <Notice tone="error">{membershipError}</Notice>}
-        {!membership && !membershipError && <p style={muted}>Loading membership…</p>}
-        {membership && (
-          <>
-            {/* Product line */}
-            <div style={productRow} className="member-product">
-              <div style={productIcon} aria-hidden><Sparkles size={22} color="#fff" /></div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#22D3EE', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                  Torque Network
-                </div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>Standard Member</div>
-                <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Monthly membership · Renews automatically</div>
-              </div>
-              <div style={{ textAlign: 'right' }} className="member-price">
-                <div style={priceText}>{PLAN_PRICE}</div>
-                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>per month</div>
-              </div>
-            </div>
-
-            {/* What's included */}
-            <div style={{ margin: '20px 0 4px' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 12 }}>What’s included</div>
-              <ul style={{ listStyle: 'none', display: 'grid', gap: 10 }} className="member-includes">
-                {INCLUDED.map((item) => (
-                  <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#CBD5E1', lineHeight: 1.5 }}>
-                    <span style={checkDot} aria-hidden><Check size={10} color="#22D3EE" strokeWidth={3} /></span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {canSubscribe ? (
-              <>
-                {sub && statusDetails && <div style={{ ...summaryBox, marginBottom: 0 }}>{statusDetails}</div>}
-                {/* Order summary */}
-                <div style={summaryBox} aria-label="Order summary">
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 10 }}>Order summary</div>
-                  <SummaryRow label="Plan" value="Standard Member" />
-                  <SummaryRow label="Billing" value="Monthly, until you cancel" />
-                  <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>Due today</span>
-                    <span style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk', letterSpacing: '-0.02em' }}>{PLAN_PRICE}</span>
-                  </div>
-                </div>
-
-                <button type="button" className="btn-primary" disabled={busy} onClick={subscribe} style={checkoutBtn(busy)}>
-                  {busy ? (
-                    <><Loader size={17} style={{ animation: 'member-spin 0.8s linear infinite' }} /> Opening secure checkout…</>
-                  ) : (
-                    <><Lock size={16} /> Proceed to Checkout<span className="member-btn-price">&nbsp;· {PRICE_LABEL}</span> <ArrowRight size={17} /></>
-                  )}
-                </button>
-
-                <div style={trustRow} className="member-trust">
-                  <span style={trustItem}><ShieldCheck size={14} color="#22C55E" /> Secure payment via Razorpay</span>
-                  <span style={trustItem}><RotateCcw size={14} color="#22D3EE" /> Cancel anytime from this page</span>
-                  <span style={trustItem}><Zap size={14} color="#F59E0B" /> Access starts after payment</span>
-                </div>
-              </>
-            ) : (
-              <div style={summaryBox}>
-                {sub ? statusDetails : <p style={muted}>You don’t have a membership yet.</p>}
-                {membership.entitled && <div style={{ marginTop: 12 }}><Notice tone="success">You have full member access.</Notice></div>}
-                {canCancel && (
-                  <button type="button" className="btn-ghost" disabled={busy} onClick={cancel} style={{ marginTop: 4 }}>Cancel membership</button>
-                )}
-              </div>
-            )}
-          </>
-        )}
-        <style>{`
-          @keyframes member-spin { to { transform: rotate(360deg); } }
-          @media (max-width: 520px) {
-            .member-card { padding: 22px 16px !important; }
-            .member-product { flex-wrap: wrap; }
-            .member-price { text-align: left !important; width: 100%; padding-left: 60px; }
-            .member-trust { flex-direction: column; align-items: flex-start !important; }
-          }
-          @media (max-width: 430px) { .member-btn-price { display: none; } }
-        `}</style>
-      </section>
+      <h2 id="membership-h" style={{ ...h2, fontSize: 20, margin: '4px 0 14px' }}>Your Membership</h2>
+      {membershipError && <Notice tone="error">{membershipError}</Notice>}
+      {!membership && !membershipError && <section style={card}><p style={muted}>Loading membership…</p></section>}
+      {membership && visiblePlans.map((plan) => (
+        <MembershipCard
+          key={plan.key}
+          plan={plan}
+          state={productState(plan.key)}
+          busyProduct={busyProduct}
+          onSubscribe={() => subscribe(plan)}
+          onCancel={(sub) => cancel(plan, sub)}
+        />
+      ))}
+      <style>{`
+        @keyframes member-spin { to { transform: rotate(360deg); } }
+        @media (max-width: 520px) {
+          .member-card { padding: 22px 16px !important; }
+          .member-product { flex-wrap: wrap; }
+          .member-price { text-align: left !important; width: 100%; padding-left: 60px; }
+          .member-trust { flex-direction: column; align-items: flex-start !important; }
+        }
+        @media (max-width: 430px) { .member-btn-price { display: none; } }
+      `}</style>
 
       <section style={card} aria-labelledby="payments-h">
         <h2 id="payments-h" style={h2}>Payment history</h2>
@@ -294,6 +233,109 @@ export default function Account() {
       <ProfileSection userId={user.id} />
       <SecuritySection />
     </AuthShell>
+  )
+}
+
+function MembershipCard({ plan, state, busyProduct, onSubscribe, onCancel }) {
+  const sub = state.subscription
+  const busy = Boolean(busyProduct)
+  const thisBusy = busyProduct === plan.key
+  const [statusLabel, statusTone] = sub ? STATUS_COPY[sub.status] || [sub.status, 'info'] : []
+  const canCancel = sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status) && !sub.cancel_at_cycle_end
+  const canSubscribe = !state.entitled && !(sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status))
+
+  const statusLines = sub ? [
+    sub.current_end && (
+      <div key="end">
+        {sub.status === 'active' && !sub.cancel_at_cycle_end ? 'Renews on' : 'Access until'}{' '}
+        <strong style={{ color: '#E2E8F0' }}>{fmtDate(sub.current_end)}</strong>
+      </div>
+    ),
+    sub.cancel_at_cycle_end && sub.status === 'active' && <div key="cancel">Cancellation scheduled — no further charges.</div>,
+    sub.status === 'pending' && <div key="pending">Your last renewal failed; Razorpay will retry automatically. Access continues meanwhile.</div>,
+    sub.status === 'halted' && <div key="halted">Renewal payments failed. Start a new membership below to restore access.</div>,
+  ].filter(Boolean) : []
+  const statusDetails = statusLines.length ? <div style={{ ...muted, display: 'grid', gap: 4 }}>{statusLines}</div> : null
+  const headingId = `membership-${plan.key}-h`
+  const { Icon } = plan
+
+  return (
+    <section style={{ ...card, ...memberCard }} aria-labelledby={headingId} className="member-card">
+      <div aria-hidden style={memberGlowLine} />
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+        <h3 id={headingId} style={{ ...h2, fontSize: 18, marginBottom: 0 }}>{plan.eyebrow}</h3>
+        {sub && <Badge tone={statusTone}>{statusLabel}</Badge>}
+      </div>
+
+      {/* Product line */}
+      <div style={productRow} className="member-product">
+        <div style={productIcon} aria-hidden><Icon size={22} color="#fff" /></div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#22D3EE', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+            Torque Network
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>{plan.name}</div>
+          <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Monthly membership · Renews automatically</div>
+        </div>
+        <div style={{ textAlign: 'right' }} className="member-price">
+          <div style={priceText}>{plan.price}</div>
+          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>per month</div>
+        </div>
+      </div>
+
+      {/* What's included */}
+      <div style={{ margin: '20px 0 4px' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 12 }}>What’s included</div>
+        <ul style={{ listStyle: 'none', display: 'grid', gap: 10 }} className="member-includes">
+          {plan.included.map((item) => (
+            <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#CBD5E1', lineHeight: 1.5 }}>
+              <span style={checkDot} aria-hidden><Check size={10} color="#22D3EE" strokeWidth={3} /></span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {canSubscribe ? (
+        <>
+          {sub && statusDetails && <div style={{ ...summaryBox, marginBottom: 0 }}>{statusDetails}</div>}
+          {/* Order summary */}
+          <div style={summaryBox} aria-label={`${plan.eyebrow} order summary`}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 10 }}>Order summary</div>
+            <SummaryRow label="Plan" value={plan.name} />
+            <SummaryRow label="Billing" value="Monthly, until you cancel" />
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>Due today</span>
+              <span style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk', letterSpacing: '-0.02em' }}>{plan.price}</span>
+            </div>
+          </div>
+
+          <button type="button" className="btn-primary" disabled={busy} onClick={onSubscribe} style={checkoutBtn(thisBusy)}>
+            {thisBusy ? (
+              <><Loader size={17} style={{ animation: 'member-spin 0.8s linear infinite' }} /> Opening secure checkout…</>
+            ) : (
+              <><Lock size={16} /> Proceed to Checkout<span className="member-btn-price">&nbsp;· {priceLabel(plan)}</span> <ArrowRight size={17} /></>
+            )}
+          </button>
+
+          <div style={trustRow} className="member-trust">
+            <span style={trustItem}><ShieldCheck size={14} color="#22C55E" /> Secure payment via Razorpay</span>
+            <span style={trustItem}><RotateCcw size={14} color="#22D3EE" /> Cancel anytime from this page</span>
+            <span style={trustItem}><Zap size={14} color="#F59E0B" /> Access starts after payment</span>
+          </div>
+        </>
+      ) : (
+        <div style={summaryBox}>
+          {sub ? statusDetails : <p style={muted}>You don’t have a membership yet.</p>}
+          {state.entitled && <div style={{ marginTop: 12 }}><Notice tone="success">You have full member access.</Notice></div>}
+          {canCancel && (
+            <button type="button" className="btn-ghost" disabled={busy} onClick={() => onCancel(sub)} style={{ marginTop: 4 }}>Cancel membership</button>
+          )}
+        </div>
+      )}
+    </section>
   )
 }
 
