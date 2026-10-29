@@ -4,6 +4,7 @@ import { apiFetch } from '../../lib/api'
 import { openSubscriptionCheckout, preloadCheckout } from '../../lib/razorpayCheckout'
 import { navigate } from '../../lib/router'
 import { useAuth } from '../AuthProvider'
+import { selectedPlan } from '../../lib/planSelection'
 import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
 import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, Briefcase, RotateCcw, Zap, Loader } from 'lucide-react'
 
@@ -165,7 +166,13 @@ export default function Account() {
   const productState = (key) =>
     membership?.products?.[key] ??
     (key === 'instagram' && membership ? { available: true, entitled: membership.entitled, subscription: membership.subscription } : null)
-  const visiblePlans = PLANS.filter((plan) => productState(plan.key)?.available)
+  // The plan picked on the homepage (?plan=…, kept through signup/login) is shown first.
+  const preferred = selectedPlan({ user })
+  const visiblePlans = PLANS
+    .filter((plan) => productState(plan.key)?.available)
+    .sort((a, b) => (b.key === preferred) - (a.key === preferred))
+  const preferredPlan = PLANS.find((plan) => plan.key === preferred)
+  const preferredUnavailable = Boolean(membership && preferredPlan && !productState(preferredPlan.key)?.available)
 
   // Download Razorpay Checkout as soon as the page opens (unless the user
   // already has every membership), in parallel with loading membership status,
@@ -182,6 +189,9 @@ export default function Account() {
       <h2 id="membership-h" style={{ ...h2, fontSize: 20, margin: '4px 0 14px' }}>Your Membership</h2>
       {membershipError && <Notice tone="error">{membershipError}</Notice>}
       {!membership && !membershipError && <section style={card}><p style={muted}>Loading membership…</p></section>}
+      {preferredUnavailable && (
+        <Notice tone="warn">{preferredPlan.eyebrow} ({priceLabel(preferredPlan)}) isn’t available for checkout yet. Please check back shortly.</Notice>
+      )}
       {membership && visiblePlans.map((plan) => (
         <MembershipCard
           key={plan.key}

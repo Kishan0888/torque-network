@@ -5,6 +5,7 @@ import { usePathname } from './lib/router'
 import { supabaseConfigured } from './lib/supabase'
 import { NotConfigured } from './auth/ui'
 import { ACCOUNT_ROUTES } from './accountRoutes'
+import { planFromSearch, rememberPlan } from './lib/planSelection'
 // The account pages are small (~20 KB total), so they ship with this bundle
 // instead of being fetched one by one — signup → login → account switch instantly.
 import Login from './auth/pages/Login'
@@ -27,6 +28,11 @@ const PROTECTED = new Set(['/account'])
 export default function AccountApp() {
   const path = usePathname().replace(/\/+$/, '') || '/'
   const known = ACCOUNT_ROUTES.includes(path)
+
+  // Keep the plan picked on the homepage (?plan=…) for the rest of the flow.
+  useEffect(() => {
+    rememberPlan(planFromSearch(window.location.search))
+  }, [path])
 
   useEffect(() => {
     // Anything outside the account area belongs to the landing page: full load.

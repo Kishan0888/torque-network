@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthProvider'
 import { navigate } from '../../lib/router'
+import { selectedPlan, withPlan } from '../../lib/planSelection'
 import { AuthShell, Notice, FooterLinks, TextLink, Loading } from '../ui'
 
 /** Supabase reports link problems in the URL hash or query (e.g. expired links). */
@@ -19,7 +20,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     if (loading || linkError) return
-    if (session) navigate(recovery ? '/reset-password' : '/account?verified=1', { replace: true })
+    if (session) navigate(recovery ? '/reset-password' : withPlan('/account?verified=1', selectedPlan({ user: session.user })), { replace: true })
   }, [loading, session, recovery, linkError])
 
   if (loading || (session && !linkError)) return <Loading />

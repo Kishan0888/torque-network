@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase, siteUrl } from '../../lib/supabase'
 import { useAuth } from '../AuthProvider'
 import { navigate, Redirect } from '../../lib/router'
+import { selectedPlan, withPlan } from '../../lib/planSelection'
 import { AuthShell, Field, SubmitButton, Notice, FooterLinks, TextLink, MIN_PASSWORD } from '../ui'
 
 export default function Signup() {
@@ -11,7 +12,8 @@ export default function Signup() {
   const [error, setError] = useState('')
   const [sentTo, setSentTo] = useState('')
 
-  if (user && !sentTo) return <Redirect to="/account" />
+  const plan = selectedPlan()
+  if (user && !sentTo) return <Redirect to={withPlan('/account', plan)} />
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
@@ -28,13 +30,14 @@ export default function Signup() {
       password: form.password,
       options: {
         emailRedirectTo: siteUrl('/auth/callback'),
-        data: { full_name: form.fullName.trim(), phone },
+        // selected_plan lets /account show the chosen plan even if the email link is opened on another device.
+        data: { full_name: form.fullName.trim(), phone, ...(plan ? { selected_plan: plan } : {}) },
       },
     })
     setBusy(false)
     if (err) return setError(err.message)
     // Email confirmation enabled => no session yet. (If it were disabled, a session would exist.)
-    if (data.session) return navigate('/account', { replace: true })
+    if (data.session) return navigate(withPlan('/account', plan), { replace: true })
     setSentTo(form.email.trim())
   }
 
@@ -52,7 +55,7 @@ export default function Signup() {
         {error && <Notice tone="error">{error}</Notice>}
         <Notice>Didn’t get it? Check spam, or resend below. Links expire, so use the newest one.</Notice>
         <button type="button" className="btn-ghost" style={{ width: '100%' }} onClick={resend}>Resend verification email</button>
-        <FooterLinks>Already verified? <TextLink to="/login">Log in</TextLink></FooterLinks>
+        <FooterLinks>Already verified? <TextLink to={withPlan('/login', plan)}>Log in</TextLink></FooterLinks>
       </AuthShell>
     )
   }
@@ -68,7 +71,7 @@ export default function Signup() {
           hint={`At least ${MIN_PASSWORD} characters.`} value={form.password} onChange={set('password')} />
         <SubmitButton busy={busy}>Create account</SubmitButton>
       </form>
-      <FooterLinks>Already have an account? <TextLink to="/login">Log in</TextLink></FooterLinks>
+      <FooterLinks>Already have an account? <TextLink to={withPlan('/login', plan)}>Log in</TextLink></FooterLinks>
     </AuthShell>
   )
 }

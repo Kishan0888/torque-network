@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from './AuthProvider'
 import { supabase, siteUrl } from '../lib/supabase'
 import { Redirect } from '../lib/router'
+import { selectedPlan, withPlan } from '../lib/planSelection'
 import { AuthShell, Notice, Loading } from './ui'
 
 /** Protects account routes: requires a session AND a verified email address. */
@@ -10,7 +11,7 @@ export default function RequireAuth({ children }) {
   const [msg, setMsg] = useState('')
 
   if (loading) return <Loading />
-  if (!user) return <Redirect to="/login" />
+  if (!user) return <Redirect to={withPlan('/login', selectedPlan())} />
 
   if (!emailVerified) {
     return (

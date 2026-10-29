@@ -3,9 +3,10 @@ import { useInView } from '../hooks/useInView'
 import { Check, ArrowRight, Sparkles, Briefcase } from 'lucide-react'
 
 // Public pricing never opens Razorpay directly: visitors create an account
-// first, then choose the plan on /account (each plan has its own checkout).
+// first, then pay on /account (each plan has its own checkout). The selected
+// plan travels as ?plan=… so /account shows that plan first.
 // Signed-in visitors who land on /signup are redirected to /account.
-const SUBSCRIBE_HREF = '/signup'
+const subscribeHref = (plan) => `/signup?plan=${plan.key}`
 
 const PLANS = [
   {
@@ -79,7 +80,7 @@ function PlanCard({ plan, inView, delay }) {
               ))}
             </ul>
 
-            <a href={SUBSCRIBE_HREF} className="btn-primary"
+            <a href={subscribeHref(plan)} className="btn-primary"
               style={{ width:'100%', justifyContent:'center', fontSize:15, fontWeight:700, padding:'16px 24px', borderRadius:14 }}>
               Subscribe — {plan.price}/month <ArrowRight size={16}/>
             </a>
