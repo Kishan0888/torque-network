@@ -14,6 +14,7 @@ import ForgotPassword from './auth/pages/ForgotPassword'
 import ResetPassword from './auth/pages/ResetPassword'
 import AuthCallback from './auth/pages/AuthCallback'
 import Account from './auth/pages/Account'
+import Checkout from './auth/pages/Checkout'
 
 const pages = {
   '/login': Login,
@@ -22,8 +23,9 @@ const pages = {
   '/reset-password': ResetPassword,
   '/auth/callback': AuthCallback,
   '/account': Account,
+  '/checkout': Checkout,
 }
-const PROTECTED = new Set(['/account'])
+const PROTECTED = new Set(['/account', '/checkout'])
 
 export default function AccountApp() {
   const path = usePathname().replace(/\/+$/, '') || '/'

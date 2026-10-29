@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthProvider'
 import { navigate } from '../../lib/router'
-import { selectedPlan, withPlan } from '../../lib/planSelection'
+import { selectedPlan, postAuthPath, validPlan } from '../../lib/planSelection'
 import { AuthShell, Notice, FooterLinks, TextLink, Loading } from '../ui'
 
 /** Supabase reports link problems in the URL hash or query (e.g. expired links). */
@@ -13,6 +13,10 @@ export function readAuthErrorFromUrl() {
   return desc ? desc.replace(/\+/g, ' ') : ''
 }
 
+// The product saved on the account at signup wins over anything this browser
+// remembers, so opening the email on another device can't switch products.
+const planForVerifiedUser = (user) => validPlan(user?.user_metadata?.selected_plan) || selectedPlan({ user })
+
 /** Landing page for the email verification link. */
 export default function AuthCallback() {
   const { session, loading, recovery } = useAuth()
@@ -20,7 +24,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     if (loading || linkError) return
-    if (session) navigate(recovery ? '/reset-password' : withPlan('/account?verified=1', selectedPlan({ user: session.user })), { replace: true })
+    if (session) navigate(recovery ? '/reset-password' : postAuthPath(planForVerifiedUser(session.user), 'verified=1'), { replace: true })
   }, [loading, session, recovery, linkError])
 
   if (loading || (session && !linkError)) return <Loading />

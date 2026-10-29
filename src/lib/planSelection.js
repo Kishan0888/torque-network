@@ -79,3 +79,13 @@ export function withPlan(path, plan) {
   url.searchParams.set('plan', valid)
   return url.pathname + url.search + url.hash
 }
+
+/**
+ * Where to send the user after signup / login / email verification:
+ * the dedicated checkout for the plan they picked, or the account dashboard.
+ * `extraQuery` (e.g. "verified=1") is kept.
+ */
+export function postAuthPath(plan, extraQuery = '') {
+  const base = validPlan(plan) ? '/checkout' : '/account'
+  return withPlan(extraQuery ? `${base}?${extraQuery}` : base, plan)
+}

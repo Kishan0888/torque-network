@@ -86,3 +86,37 @@ describe('cart emptied / purchase finished', () => {
     expect(() => forgetPlan({ removeItem: () => { throw new Error('blocked') } })).not.toThrow()
   })
 })
+
+describe('dedicated checkout: product is locked through every redirect', () => {
+  it('LinkedIn: /signup?plan=linkedin → login → /checkout?plan=linkedin', async () => {
+    const { postAuthPath } = await import('../src/lib/planSelection.js')
+    const m = new Map()
+    const storage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }
+    rememberPlan(planFromSearch('?plan=linkedin'), storage)
+    const login = withPlan('/login', selectedPlan({ search: '?plan=linkedin', storage }))
+    expect(postAuthPath(selectedPlan({ search: new URL(login, 'http://l').search, storage }))).toBe('/checkout?plan=linkedin')
+  })
+
+  it('Instagram: /signup?plan=instagram → login → /checkout?plan=instagram', async () => {
+    const { postAuthPath } = await import('../src/lib/planSelection.js')
+    expect(postAuthPath(selectedPlan({ search: '?plan=instagram', storage: null }))).toBe('/checkout?plan=instagram')
+  })
+
+  it('email verification keeps the plan and the verified flag', async () => {
+    const { postAuthPath } = await import('../src/lib/planSelection.js')
+    expect(postAuthPath('linkedin', 'verified=1')).toBe('/checkout?verified=1&plan=linkedin')
+    expect(postAuthPath(null, 'verified=1')).toBe('/account?verified=1')
+  })
+
+  it('a stale remembered choice never overrides the product in the URL', () => {
+    const m = new Map([['torque_selected_plan', 'instagram']])
+    const storage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, v) }
+    expect(selectedPlan({ search: '?plan=linkedin', storage, user: { user_metadata: { selected_plan: 'instagram' } } })).toBe('linkedin')
+  })
+
+  it('no plan chosen → the account dashboard, never a checkout', async () => {
+    const { postAuthPath } = await import('../src/lib/planSelection.js')
+    expect(postAuthPath(null)).toBe('/account')
+    expect(postAuthPath('plan_TthdcK6RJ9gUFE')).toBe('/account')
+  })
+})

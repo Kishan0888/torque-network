@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase, siteUrl } from '../../lib/supabase'
 import { useAuth } from '../AuthProvider'
 import { navigate, Redirect } from '../../lib/router'
-import { selectedPlan, withPlan } from '../../lib/planSelection'
+import { selectedPlan, withPlan, postAuthPath } from '../../lib/planSelection'
 import { AuthShell, Field, SubmitButton, Notice, FooterLinks, TextLink, MIN_PASSWORD } from '../ui'
 
 export default function Signup() {
@@ -13,7 +13,7 @@ export default function Signup() {
   const [sentTo, setSentTo] = useState('')
 
   const plan = selectedPlan()
-  if (user && !sentTo) return <Redirect to={withPlan('/account', plan)} />
+  if (user && !sentTo) return <Redirect to={postAuthPath(plan)} />
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
@@ -37,7 +37,7 @@ export default function Signup() {
     setBusy(false)
     if (err) return setError(err.message)
     // Email confirmation enabled => no session yet. (If it were disabled, a session would exist.)
-    if (data.session) return navigate(withPlan('/account', plan), { replace: true })
+    if (data.session) return navigate(postAuthPath(plan), { replace: true })
     setSentTo(form.email.trim())
   }
 

@@ -1,85 +1,30 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { apiFetch } from '../../lib/api'
-import { openSubscriptionCheckout, preloadCheckout } from '../../lib/razorpayCheckout'
-import { navigate } from '../../lib/router'
+import { navigate, Redirect } from '../../lib/router'
 import { useAuth } from '../AuthProvider'
-import { selectedPlan, rememberPlan, forgetPlan } from '../../lib/planSelection'
+import { planFromSearch, withPlan } from '../../lib/planSelection'
 import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
-import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, Briefcase, RotateCcw, Zap, Loader, ShoppingCart, X } from 'lucide-react'
+import { PLANS, priceLabel, canPurchase, productStateFrom, STATUS_COPY, IN_PROGRESS, fmtDate, fmtAmount } from '../plans'
+import { card, h2, muted, memberCard, memberGlowLine, productRow, productIcon, priceText, summaryBox, eyebrowText } from '../membershipStyles'
+import { Badge, IncludedList, MemberStyles } from '../membershipUi'
 
-// Display only. The amount actually charged comes from each product's Razorpay
-// plan on the server (instagram -> RAZORPAY_PLAN_ID, linkedin ->
-// RAZORPAY_LINKEDIN_PLAN_ID); keep these labels in sync with those plans.
-// The browser only sends the product key; the server picks the plan id.
-const PLANS = [
-  {
-    key: 'instagram',
-    eyebrow: 'Torque for Instagram',
-    name: 'Standard Member',
-    price: '₹750',
-    Icon: Sparkles,
-    // Same benefit wording as the public pricing card (src/sections/Pricing.jsx).
-    included: [
-      '500–2,500 real creators watch, save and share your post',
-      'Engagement within 48 hours, staggered naturally',
-      'A professionally managed network, open to every creator category',
-      'Access to a vetted community of 10,000+ influencers',
-      'A network that grows with you at no extra cost',
-    ],
-  },
-  {
-    key: 'linkedin',
-    eyebrow: 'Torque for LinkedIn',
-    name: 'LinkedIn Professional',
-    price: '₹500',
-    Icon: Briefcase,
-    included: [
-      'Share your LinkedIn posts with the Torque Network community',
-      'Genuine engagement from fellow members on your posts',
-      'A professionally managed network for LinkedIn professionals',
-    ],
-  },
-]
-const priceLabel = (plan) => `${plan.price} / month`
+const checkoutPath = (plan) => withPlan('/checkout', plan.key)
 
-const IN_PROGRESS = ['active', 'authenticated', 'pending', 'paused']
-/** A product can go in the cart only if it is offered and the user doesn't already have it. */
-const canPurchase = (state) =>
-  Boolean(state?.available) && !state.entitled && !(state.subscription && IN_PROGRESS.includes(state.subscription.status))
-
-const STATUS_COPY = {
-  active: ['Active', 'success'],
-  authenticated: ['Payment authorised — activating', 'info'],
-  pending: ['Payment retrying', 'warn'],
-  halted: ['Payment failed', 'error'],
-  cancelled: ['Cancelled', 'warn'],
-  completed: ['Completed', 'info'],
-  expired: ['Expired', 'warn'],
-  paused: ['Paused', 'warn'],
-}
-
-const fmtDate = (iso) =>
-  iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
-const fmtAmount = (paise, currency) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency || 'INR' }).format((paise || 0) / 100)
-
-const card = {
-  borderRadius: 18, padding: '22px 22px', marginBottom: 18,
-  background: 'rgba(5,8,22,0.55)', border: '1px solid rgba(255,255,255,0.07)',
-}
-const h2 = { fontSize: 17, fontWeight: 700, marginBottom: 12 }
-const muted = { fontSize: 13, color: '#94A3B8', lineHeight: 1.7 }
-
+/**
+ * /account — membership dashboard: existing memberships (status, renewal,
+ * cancel), payment history, profile and security. Buying happens on the
+ * dedicated /checkout page for one product at a time.
+ */
 export default function Account() {
   const { user } = useAuth()
-  const [membership, setMembership] = useState(null) // { entitled, subscription }
+  // Old links like /account?plan=linkedin go straight to that product's checkout.
+  const [explicitPlan] = useState(() => planFromSearch(window.location.search))
+  const [membership, setMembership] = useState(null)
   const [membershipError, setMembershipError] = useState('')
   const [payments, setPayments] = useState([])
   const [busyProduct, setBusyProduct] = useState(null) // product key while an action runs
-  // Cart holds ONE membership. undefined = the user hasn't touched the cart yet
-  // (then the plan picked on the homepage is pre-added); null = empty.
-  const [cartChoice, setCartChoice] = useState(undefined)
   const [notice, setNotice] = useState(() =>
     new URLSearchParams(window.location.search).get('verified') ? ['success', 'Email verified — welcome to Torque Network!'] : null,
   )
@@ -106,51 +51,12 @@ export default function Account() {
   }, [])
 
   useEffect(() => {
+    if (explicitPlan) return
     loadMembership()
     loadPayments()
-  }, [loadMembership, loadPayments])
+  }, [explicitPlan, loadMembership, loadPayments])
 
-  // Called only when the server has not yet seen the subscription as active
-  // (Razorpay's activation webhook can lag a few seconds behind the payment).
-  async function waitForActivation(product) {
-    for (let i = 0; i < 10; i++) {
-      await new Promise((r) => setTimeout(r, 2000))
-      const data = await loadMembership()
-      if (data?.products?.[product]?.entitled) return true
-    }
-    return false
-  }
-
-  async function subscribe(plan) {
-    setNotice(null)
-    setBusyProduct(plan.key)
-    preloadCheckout() // no-op if already loaded; otherwise downloads while the server creates the subscription
-    try {
-      const order = await apiFetch('/api/subscriptions/create', { method: 'POST', body: { product: plan.key } })
-      const result = await openSubscriptionCheckout(order)
-      if (!result) {
-        setNotice(['info', 'Checkout closed. You have not been charged.'])
-        return
-      }
-      setNotice(['info', 'Payment received — confirming your membership…'])
-      const verified = await apiFetch('/api/subscriptions/verify', { method: 'POST', body: result })
-      // verify reports this subscription's fresh status; only poll if it isn't active yet.
-      const [active] = await Promise.all([
-        verified.status === 'active' ? loadMembership().then(() => true) : waitForActivation(plan.key),
-        loadPayments(),
-      ])
-      setCartChoice(null)
-      clearRememberedPlan()
-      setNotice(active
-        ? ['success', `Your ${plan.eyebrow} membership is active. Welcome aboard!`]
-        : ['info', 'Payment verified. Activation can take a minute — refresh this page shortly.'])
-    } catch (e) {
-      setNotice(['error', e.message])
-      await loadMembership()
-    } finally {
-      setBusyProduct(null)
-    }
-  }
+  if (explicitPlan) return <Redirect to={withPlan('/checkout', explicitPlan)} />
 
   async function cancel(plan, sub) {
     const msg = sub?.status === 'active'
@@ -172,56 +78,11 @@ export default function Account() {
     }
   }
 
-  // Per-product state from /api/subscriptions/me (older responses: Instagram only).
-  const productState = (key) =>
-    membership?.products?.[key] ??
-    (key === 'instagram' && membership ? { available: true, entitled: membership.entitled, subscription: membership.subscription } : null)
-  // The plan picked on the homepage (?plan=…, kept through signup/login) is shown first.
-  // Read once on page load so the product order doesn't jump when the cart changes.
-  const [preferred] = useState(() => selectedPlan({ user }))
-  const visiblePlans = PLANS
-    .filter((plan) => productState(plan.key)?.available)
-    .sort((a, b) => (b.key === preferred) - (a.key === preferred))
-  const preferredPlan = PLANS.find((plan) => plan.key === preferred)
-  const preferredUnavailable = Boolean(membership && preferredPlan && !productState(preferredPlan.key)?.available)
-
-  // Cart: exactly one product (or empty). Products the user already has can't be in it.
-  const cartKey = cartChoice !== undefined ? cartChoice : preferred
-  const cartPlan = PLANS.find((plan) => plan.key === cartKey && canPurchase(productState(plan.key))) || null
-
-  // Clear every remembered selection so an emptied/finished cart stays empty.
-  function clearRememberedPlan() {
-    forgetPlan()
-    if (user?.user_metadata?.selected_plan) {
-      supabase.auth.updateUser({ data: { selected_plan: null } }).catch(() => {})
-    }
-  }
-
-  function addToCart(plan) {
-    setNotice(null)
-    setCartChoice(plan.key)
-    rememberPlan(plan.key)
-    requestAnimationFrame(() => document.getElementById('cart')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  }
-
-  function removeFromCart() {
-    setCartChoice(null)
-    clearRememberedPlan()
-    // Drop ?plan=… so a refresh doesn't put it back.
-    const url = new URL(window.location.href)
-    if (url.searchParams.has('plan')) {
-      url.searchParams.delete('plan')
-      window.history.replaceState({}, '', url.pathname + url.search + url.hash)
-    }
-  }
-
-  // Download Razorpay Checkout as soon as the page opens (unless the user
-  // already has every membership), in parallel with loading membership status,
-  // so clicking a checkout button only waits for the server, not for the script.
-  const needsCheckout = !membership || visiblePlans.some((plan) => !productState(plan.key)?.entitled)
-  useEffect(() => {
-    if (needsCheckout) preloadCheckout()
-  }, [needsCheckout])
+  const available = PLANS.filter((plan) => productStateFrom(membership, plan.key)?.available)
+  // Memberships the user has (or had): shown with status and management actions.
+  const mine = available.filter((plan) => productStateFrom(membership, plan.key)?.subscription || productStateFrom(membership, plan.key)?.entitled)
+  // Products never subscribed to: offered as a link to their own checkout.
+  const others = available.filter((plan) => !mine.includes(plan) && canPurchase(productStateFrom(membership, plan.key)))
 
   return (
     <AuthShell title="Your account" subtitle={user.email} wide>
@@ -230,34 +91,28 @@ export default function Account() {
       <h2 id="membership-h" style={{ ...h2, fontSize: 20, margin: '4px 0 14px' }}>Your Membership</h2>
       {membershipError && <Notice tone="error">{membershipError}</Notice>}
       {!membership && !membershipError && <section style={card}><p style={muted}>Loading membership…</p></section>}
-      {preferredUnavailable && (
-        <Notice tone="warn">{preferredPlan.eyebrow} ({priceLabel(preferredPlan)}) isn’t available for checkout yet. Please check back shortly.</Notice>
+      {membership && mine.length === 0 && (
+        <section style={card}><p style={muted}>You don’t have a membership yet.</p></section>
       )}
-      {membership && visiblePlans.map((plan) => (
+      {membership && mine.map((plan) => (
         <MembershipCard
           key={plan.key}
           plan={plan}
-          state={productState(plan.key)}
+          state={productStateFrom(membership, plan.key)}
           busyProduct={busyProduct}
-          inCart={cartPlan?.key === plan.key}
-          onAddToCart={() => addToCart(plan)}
-          onRemoveFromCart={removeFromCart}
           onCancel={(sub) => cancel(plan, sub)}
         />
       ))}
-      {membership && visiblePlans.some((plan) => canPurchase(productState(plan.key))) && (
-        <CartSummary plan={cartPlan} busyProduct={busyProduct} onCheckout={() => cartPlan && subscribe(cartPlan)} onRemove={removeFromCart} />
+
+      {membership && others.length > 0 && (
+        <section style={card} aria-labelledby="add-membership-h">
+          <h2 id="add-membership-h" style={h2}>{mine.length ? 'Add another membership' : 'Choose a membership'}</h2>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {others.map((plan) => <PlanLinkRow key={plan.key} plan={plan} />)}
+          </div>
+        </section>
       )}
-      <style>{`
-        @keyframes member-spin { to { transform: rotate(360deg); } }
-        @media (max-width: 520px) {
-          .member-card { padding: 22px 16px !important; }
-          .member-product { flex-wrap: wrap; }
-          .member-price { text-align: left !important; width: 100%; padding-left: 60px; }
-          .member-trust { flex-direction: column; align-items: flex-start !important; }
-        }
-        @media (max-width: 430px) { .member-btn-price { display: none; } }
-      `}</style>
+      <MemberStyles />
 
       <section style={card} aria-labelledby="payments-h">
         <h2 id="payments-h" style={h2}>Payment history</h2>
@@ -292,12 +147,30 @@ export default function Account() {
   )
 }
 
-function MembershipCard({ plan, state, busyProduct, inCart, onAddToCart, onRemoveFromCart, onCancel }) {
+/** A product the user doesn't have: one line linking to its dedicated checkout. */
+function PlanLinkRow({ plan }) {
+  const { Icon } = plan
+  return (
+    <div style={{ ...productRow, flexWrap: 'wrap' }}>
+      <div style={productIcon} aria-hidden><Icon size={20} color="#fff" /></div>
+      <div style={{ flex: 1, minWidth: 160 }}>
+        <div style={eyebrowText}>{plan.eyebrow}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>{plan.name} · {priceLabel(plan)}</div>
+      </div>
+      <button type="button" className="btn-ghost" onClick={() => navigate(checkoutPath(plan))} style={{ padding: '11px 18px', fontSize: 14 }}>
+        Subscribe <ArrowRight size={15} />
+      </button>
+    </div>
+  )
+}
+
+/** A membership the user has or had: status, renewal date and management actions. */
+function MembershipCard({ plan, state, busyProduct, onCancel }) {
   const sub = state.subscription
   const busy = Boolean(busyProduct)
   const [statusLabel, statusTone] = sub ? STATUS_COPY[sub.status] || [sub.status, 'info'] : []
-  const canCancel = sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status) && !sub.cancel_at_cycle_end
-  const canSubscribe = canPurchase(state)
+  const canCancel = sub && IN_PROGRESS.includes(sub.status) && !sub.cancel_at_cycle_end
+  const canRenew = canPurchase(state) // e.g. halted / expired: start a new subscription via checkout
 
   const statusLines = sub ? [
     sub.current_end && (
@@ -308,9 +181,8 @@ function MembershipCard({ plan, state, busyProduct, inCart, onAddToCart, onRemov
     ),
     sub.cancel_at_cycle_end && sub.status === 'active' && <div key="cancel">Cancellation scheduled — no further charges.</div>,
     sub.status === 'pending' && <div key="pending">Your last renewal failed; Razorpay will retry automatically. Access continues meanwhile.</div>,
-    sub.status === 'halted' && <div key="halted">Renewal payments failed. Start a new membership below to restore access.</div>,
+    sub.status === 'halted' && <div key="halted">Renewal payments failed. Subscribe again to restore access.</div>,
   ].filter(Boolean) : []
-  const statusDetails = statusLines.length ? <div style={{ ...muted, display: 'grid', gap: 4 }}>{statusLines}</div> : null
   const headingId = `membership-${plan.key}-h`
   const { Icon } = plan
 
@@ -323,13 +195,10 @@ function MembershipCard({ plan, state, busyProduct, inCart, onAddToCart, onRemov
         {sub && <Badge tone={statusTone}>{statusLabel}</Badge>}
       </div>
 
-      {/* Product line */}
       <div style={productRow} className="member-product">
         <div style={productIcon} aria-hidden><Icon size={22} color="#fff" /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#22D3EE', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-            Torque Network
-          </div>
+          <div style={eyebrowText}>Torque Network</div>
           <div style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>{plan.name}</div>
           <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Monthly membership · Renews automatically</div>
         </div>
@@ -339,187 +208,31 @@ function MembershipCard({ plan, state, busyProduct, inCart, onAddToCart, onRemov
         </div>
       </div>
 
-      {/* What's included */}
       <div style={{ margin: '20px 0 4px' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 12 }}>What’s included</div>
-        <ul style={{ listStyle: 'none', display: 'grid', gap: 10 }} className="member-includes">
-          {plan.included.map((item) => (
-            <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#CBD5E1', lineHeight: 1.5 }}>
-              <span style={checkDot} aria-hidden><Check size={10} color="#22D3EE" strokeWidth={3} /></span>
-              {item}
-            </li>
-          ))}
-        </ul>
+        <IncludedList items={plan.included} />
       </div>
 
-      {canSubscribe ? (
-        <>
-          {sub && statusDetails && <div style={{ ...summaryBox, marginBottom: 0 }}>{statusDetails}</div>}
-          {inCart ? (
-            <div style={inCartRow}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#4ADE80' }}>
-                <Check size={16} strokeWidth={3} /> Added to cart
-              </span>
-              <button type="button" className="btn-ghost" disabled={busy} onClick={onRemoveFromCart} style={{ padding: '9px 16px', fontSize: 13 }}>
-                <X size={14} /> Remove
-              </button>
-            </div>
-          ) : (
-            <button type="button" className="btn-ghost" disabled={busy} onClick={onAddToCart} style={addToCartBtn}>
-              <ShoppingCart size={16} /> Add to Cart · {priceLabel(plan)}
-            </button>
-          )}
-        </>
-      ) : (
-        <div style={summaryBox}>
-          {sub ? statusDetails : <p style={muted}>You don’t have a membership yet.</p>}
-          {state.entitled && <div style={{ marginTop: 12 }}><Notice tone="success">You have full member access.</Notice></div>}
+      <div style={summaryBox}>
+        {statusLines.length > 0 && <div style={{ ...muted, display: 'grid', gap: 4 }}>{statusLines}</div>}
+        {state.entitled && <div style={{ marginTop: statusLines.length ? 12 : 0 }}><Notice tone="success">You have full member access.</Notice></div>}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {canCancel && (
             <button type="button" className="btn-ghost" disabled={busy} onClick={() => onCancel(sub)} style={{ marginTop: 4 }}>Cancel membership</button>
           )}
+          {canRenew && (
+            <button type="button" className="btn-primary" disabled={busy} onClick={() => navigate(checkoutPath(plan))} style={{ marginTop: 4 }}>
+              Subscribe again · {priceLabel(plan)} <ArrowRight size={15} />
+            </button>
+          )}
         </div>
-      )}
+      </div>
     </section>
-  )
-}
-
-function CartSummary({ plan, busyProduct, onCheckout, onRemove }) {
-  const busy = Boolean(busyProduct)
-  const thisBusy = Boolean(plan) && busyProduct === plan.key
-  return (
-    <section id="cart" style={{ ...card, ...memberCard }} aria-labelledby="cart-h" className="member-card">
-      <div aria-hidden style={memberGlowLine} />
-      <h2 id="cart-h" style={{ ...h2, fontSize: 18, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <ShoppingCart size={18} color="#22D3EE" /> Your Cart
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>{plan ? '1 item' : 'Empty'}</span>
-      </h2>
-
-      {!plan ? (
-        <p style={muted}>Your cart is empty. Choose a membership above and tap <strong style={{ color: '#E2E8F0' }}>Add to Cart</strong>.</p>
-      ) : (
-        <>
-          {/* Cart item */}
-          <div style={productRow} className="member-product">
-            <div style={productIcon} aria-hidden><plan.Icon size={22} color="#fff" /></div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#22D3EE', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{plan.eyebrow}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>{plan.name}</div>
-              <button type="button" onClick={onRemove} disabled={busy} style={removeLink}>Remove</button>
-            </div>
-            <div style={{ textAlign: 'right' }} className="member-price">
-              <div style={{ ...priceText, fontSize: 24 }}>{plan.price}</div>
-              <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>per month</div>
-            </div>
-          </div>
-
-          {/* Order summary */}
-          <div style={summaryBox} aria-label="Order summary">
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 10 }}>Order summary</div>
-            <SummaryRow label="Product" value={`${plan.eyebrow} — ${plan.name}`} />
-            <SummaryRow label="Monthly price" value={priceLabel(plan)} />
-            <SummaryRow label="Billing" value="Monthly recurring, until you cancel" />
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>Due today</span>
-              <span style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk', letterSpacing: '-0.02em' }}>{plan.price}</span>
-            </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 6 }}>Then {plan.price} every month. Only this membership is charged.</div>
-          </div>
-
-          <button type="button" className="btn-primary" disabled={busy} onClick={onCheckout} style={checkoutBtn(thisBusy)}>
-            {thisBusy ? (
-              <><Loader size={17} style={{ animation: 'member-spin 0.8s linear infinite' }} /> Opening secure checkout…</>
-            ) : (
-              <><Lock size={16} /> Proceed to Checkout<span className="member-btn-price">&nbsp;· {priceLabel(plan)}</span> <ArrowRight size={17} /></>
-            )}
-          </button>
-
-          <div style={trustRow} className="member-trust">
-            <span style={trustItem}><ShieldCheck size={14} color="#22C55E" /> Secure payment via Razorpay</span>
-            <span style={trustItem}><RotateCcw size={14} color="#22D3EE" /> Cancel anytime from this page</span>
-            <span style={trustItem}><Zap size={14} color="#F59E0B" /> Access starts after payment</span>
-          </div>
-        </>
-      )}
-    </section>
-  )
-}
-
-// ── Membership (order summary) styles ──────────────────────────
-const memberCard = {
-  position: 'relative', overflow: 'hidden', padding: '26px 26px',
-  background: 'linear-gradient(180deg, rgba(13,19,38,0.95), rgba(5,8,22,0.9))',
-  border: '1px solid rgba(59,130,246,0.28)',
-  boxShadow: '0 0 0 1px rgba(34,211,238,0.04) inset, 0 18px 50px rgba(0,0,0,0.45), 0 0 40px rgba(59,130,246,0.08)',
-}
-const memberGlowLine = {
-  position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-  background: 'linear-gradient(90deg, transparent, #3B82F6, #22D3EE, transparent)',
-}
-const productRow = {
-  display: 'flex', alignItems: 'center', gap: 16, padding: '16px 16px', borderRadius: 16,
-  background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.18)',
-}
-const productIcon = {
-  width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  background: 'linear-gradient(135deg, #2563EB, #22D3EE)', boxShadow: '0 0 24px rgba(34,211,238,0.35)',
-}
-const priceText = {
-  fontSize: 30, fontWeight: 700, fontFamily: 'Space Grotesk', letterSpacing: '-0.03em', lineHeight: 1,
-  background: 'linear-gradient(135deg, #3B82F6, #22D3EE)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-}
-const checkDot = {
-  width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.35)',
-}
-const summaryBox = {
-  marginTop: 18, marginBottom: 18, padding: '16px 18px', borderRadius: 14,
-  background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
-}
-const checkoutBtn = (busy) => ({
-  width: '100%', justifyContent: 'center', padding: '17px 24px', fontSize: 16, fontWeight: 700, borderRadius: 14,
-  boxShadow: '0 10px 30px rgba(37,99,235,0.35), 0 0 30px rgba(34,211,238,0.15)',
-  opacity: busy ? 0.8 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'normal',
-})
-const trustRow = {
-  display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '8px 18px', marginTop: 14,
-}
-const addToCartBtn = {
-  width: '100%', justifyContent: 'center', marginTop: 18, padding: '14px 22px', fontSize: 15, fontWeight: 700, borderRadius: 14,
-  border: '1px solid rgba(34,211,238,0.45)', color: '#E0F2FE', background: 'rgba(34,211,238,0.08)',
-}
-const inCartRow = {
-  marginTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
-  padding: '12px 14px', borderRadius: 14, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
-}
-const removeLink = {
-  marginTop: 4, padding: 0, background: 'none', border: 'none', color: '#94A3B8', fontSize: 12,
-  textDecoration: 'underline', cursor: 'pointer',
-}
-const trustItem = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94A3B8' }
-
-function SummaryRow({ label, value }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, padding: '4px 0' }}>
-      <span style={{ color: '#94A3B8' }}>{label}</span>
-      <span style={{ color: '#E2E8F0', fontWeight: 600, textAlign: 'right' }}>{value}</span>
-    </div>
   )
 }
 
 const th = { padding: '8px 8px', fontWeight: 600 }
 const td = { padding: '10px 8px' }
-
-function Badge({ tone, children }) {
-  const colors = { success: '#22C55E', info: '#3B82F6', warn: '#F59E0B', error: '#EF4444' }
-  const c = colors[tone] || colors.info
-  return (
-    <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 999, fontSize: 12, fontWeight: 700,
-      color: c, background: `${c}1A`, border: `1px solid ${c}55` }}>{children}</span>
-  )
-}
 
 function ProfileSection({ userId }) {
   const [form, setForm] = useState({ full_name: '', phone: '' })

@@ -7,7 +7,8 @@
     { "source": "/forgot-password", "destination": "/account.html" },
     { "source": "/reset-password", "destination": "/account.html" },
     { "source": "/auth/callback", "destination": "/account.html" },
-    { "source": "/account", "destination": "/account.html" }
+    { "source": "/account", "destination": "/account.html" },
+    { "source": "/checkout", "destination": "/account.html" }
   ],
   "headers": [
     {

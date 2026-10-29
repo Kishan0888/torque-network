@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase, siteUrl } from '../../lib/supabase'
 import { useAuth } from '../AuthProvider'
 import { navigate, Redirect } from '../../lib/router'
-import { selectedPlan, withPlan } from '../../lib/planSelection'
+import { selectedPlan, withPlan, postAuthPath } from '../../lib/planSelection'
 import { AuthShell, Field, SubmitButton, Notice, FooterLinks, TextLink } from '../ui'
 
 export default function Login() {
@@ -15,7 +15,7 @@ export default function Login() {
   const [info, setInfo] = useState('')
 
   const plan = selectedPlan()
-  if (user) return <Redirect to={withPlan('/account', plan)} />
+  if (user) return <Redirect to={postAuthPath(plan)} />
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -23,7 +23,7 @@ export default function Login() {
     setBusy(true)
     const { error: err } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setBusy(false)
-    if (!err) return navigate(withPlan('/account', plan), { replace: true })
+    if (!err) return navigate(postAuthPath(plan), { replace: true })
     if (err.code === 'email_not_confirmed' || /not confirmed/i.test(err.message)) {
       setUnverified(true)
       return setError('Please verify your email address before logging in.')
