@@ -5,7 +5,7 @@ const METRICS = [
   { value:2500, prefix:'500–', suffix:'+', label:'Real creators engage your post', sub:'Per post submitted' },
   { value:10000, prefix:'', suffix:'+',   label:'Real influencers in the network', sub:'Growing every week' },
   { value:48,   prefix:'', suffix:' hrs', label:'Engagement window',               sub:'Staggered naturally' },
-  { value:750,  prefix:'₹', suffix:'',    label:'Per month · One simple plan',     sub:'Cancel anytime' },
+  { value:750,  prefix:'₹', suffix:'',    label:'Per month · Instagram plan',      sub:'LinkedIn plan ₹500/month' },
 ]
 
 function Metric({ m, delay }) {

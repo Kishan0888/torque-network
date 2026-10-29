@@ -13,7 +13,7 @@ const FAQS = [
   { q:'Is Torque Network only for certain types of creators?',
     a:"No. It is open to Instagram creators in every category, from food and travel to fashion, fitness, tech and comedy. It is also open to creators of every size, from under 5K followers to 100K+." },
   { q:'How much does membership cost?',
-    a:"Torque Network has one plan: Standard Member at ₹750 per month, billed monthly. Create your account, then subscribe from your account page. The network works because members give as much as they get, so every member is expected to engage regularly." },
+    a:"Torque Network has two separate monthly plans: Torque for Instagram (Standard Member) at ₹750 per month, and Torque for LinkedIn at ₹500 per month. Join one or both. Create your account, then subscribe from your account page. The network works because members give as much as they get, so every member is expected to engage regularly." },
   { q:'What does "engaging regularly" mean?',
     a:"It means showing up for the other members by watching, saving and sharing their posts within the 48-hour window after each one is submitted. The engagement you receive comes from members doing the same for you, so this is what keeps the network working for everyone." },
   { q:'Can I cancel anytime?',

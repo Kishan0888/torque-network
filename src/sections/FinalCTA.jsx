@@ -53,7 +53,7 @@ export default function FinalCTA() {
             transition={{duration:3,repeat:Infinity}}
             style={{ display:'inline-flex', alignItems:'center', gap:8, marginBottom:40, borderColor:'rgba(245,158,11,0.3)' }}>
             <span style={{ width:7, height:7, borderRadius:'50%', background:'#F59E0B', display:'inline-block' }} className="pulse-ring"/>
-            One Plan · ₹750/month
+            Instagram ₹750/month · LinkedIn ₹500/month
           </motion.div>
 
           <h2 style={{ fontSize:'clamp(2.6rem,7vw,6.5rem)', fontWeight:700, lineHeight:1.02, letterSpacing:'-0.04em', marginBottom:20, fontFamily:'Space Grotesk' }}>
