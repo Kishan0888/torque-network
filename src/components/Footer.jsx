@@ -36,7 +36,7 @@ export default function Footer() {
               Amplification Network for Instagram Creators
             </p>
             <p style={{fontSize:11,color:'#334155',lineHeight:1.6,marginBottom:24,maxWidth:210,fontStyle:'italic'}}>
-              Free for life for the first 500 members.
+              One plan · ₹750/month · Cancel anytime.
             </p>
             <div style={{display:'flex',gap:10}}>
               {socials.map(({ icon:Icon, label })=>(

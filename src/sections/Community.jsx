@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     label:'Membership Tier', fields:[
-      { id:'tier', label:'Membership Tier', type:'select', options:['Founding Member (Free — first 500 only)','Standard Member (₹1,500/month)'], required:true },
+      { id:'tier', label:'Membership Tier', type:'select', options:['Standard Member (₹750/month)'], required:true },
     ],
     goals:[
       'Watch, save and share fellow creators\' posts within 48 hours',
@@ -122,7 +122,7 @@ function SuccessAnimation() {
 
       <motion.h3 initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.6}}
         style={{fontSize:24,fontWeight:700,fontFamily:'Space Grotesk',marginBottom:10}}>
-        You're on the Waitlist! 🎉
+        Application Received! 🎉
       </motion.h3>
       <motion.p initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:0.75}}
         style={{fontSize:15,color:'#64748B',lineHeight:1.65,maxWidth:340,margin:'0 auto'}}>
@@ -186,7 +186,7 @@ export default function Community() {
             Register to Join<br/><span className="gradient-text">Torque Network.</span>
           </h2>
           <p style={{fontSize:17,color:'#64748B',maxWidth:520,margin:'18px auto 0',lineHeight:1.72}}>
-            We're inviting early creators to shape the future of Torque Network. This is your chance to be a founding voice.
+            Tell us about yourself and the Torque Network team will get in touch to help you get started.
           </p>
         </motion.div>
 
@@ -198,10 +198,9 @@ export default function Community() {
           >
             <h3 style={{fontSize:24,fontWeight:700,marginBottom:20,fontFamily:'Space Grotesk'}}>Why apply now?</h3>
             {[
-              {emoji:'🔒',title:'Founding Access',desc:'Shape the product roadmap and community culture from day one.'},
+              {emoji:'🔒',title:'Early Access',desc:'Shape the product roadmap and community culture from day one.'},
               {emoji:'🤝',title:'Real Community',desc:'Connect with vetted creators who are serious about their craft.'},
               {emoji:'📈',title:'Collaborative Growth',desc:'Grow alongside a community that actively supports your content.'},
-              {emoji:'🌟',title:'Founding Creator Badge',desc:'Permanently recognized as a founding member of Torque Network.'},
             ].map((item,i)=>(
               <motion.div key={item.title}
                 initial={{opacity:0,x:-20}} animate={inView?{opacity:1,x:0}:{}}
@@ -307,7 +306,7 @@ export default function Community() {
                                   {form.consent&&<Check size={11} color="#fff"/>}
                                 </div>
                                 <span style={{fontSize:12,color:'#64748B',lineHeight:1.6}}>
-                                  I agree to be contacted by the Torque Network team and understand this is a waitlist application, not an immediate enrolment.
+                                  I agree to be contacted by the Torque Network team and understand this is an application, not an immediate enrolment.
                                 </span>
                               </button>
                             </div>

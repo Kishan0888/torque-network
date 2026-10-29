@@ -8,7 +8,7 @@ import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
 
 // Display only. The amount actually charged comes from the Razorpay plan
 // (RAZORPAY_PLAN_ID on the server); keep this label in sync with that plan.
-const PRICE_LABEL = '₹1,500 / month'
+const PRICE_LABEL = '₹750 / month'
 
 const STATUS_COPY = {
   active: ['Active', 'success'],

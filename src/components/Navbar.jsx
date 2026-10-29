@@ -129,7 +129,7 @@ export default function Navbar() {
           {/* Desktop CTA */}
           <div className="nav-cta">
             <motion.a
-              href="#community"
+              href="#pricing"
               whileHover={{
                 scale: 1.05,
                 boxShadow: '0 0 35px rgba(245,158,11,.6)',
@@ -151,7 +151,7 @@ export default function Navbar() {
                 boxShadow: '0 10px 28px rgba(245,158,11,.35)',
               }}
             >
-              Claim Your Spot
+              Join Now
             </motion.a>
           </div>
 
@@ -233,7 +233,7 @@ export default function Navbar() {
               ))}
 
               <motion.a
-                href="#community"
+                href="#pricing"
                 onClick={() => setMob(false)}
                 whileTap={{ scale: 0.97 }}
                 style={{
@@ -250,7 +250,7 @@ export default function Navbar() {
                   textDecoration: 'none',
                 }}
               >
-                Claim Your Spot
+                Join Now
               </motion.a>
             </motion.div>
           )}

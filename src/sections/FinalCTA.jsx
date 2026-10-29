@@ -53,7 +53,7 @@ export default function FinalCTA() {
             transition={{duration:3,repeat:Infinity}}
             style={{ display:'inline-flex', alignItems:'center', gap:8, marginBottom:40, borderColor:'rgba(245,158,11,0.3)' }}>
             <span style={{ width:7, height:7, borderRadius:'50%', background:'#F59E0B', display:'inline-block' }} className="pulse-ring"/>
-            500 Founding Spots · Free for Life
+            One Plan · ₹750/month
           </motion.div>
 
           <h2 style={{ fontSize:'clamp(2.6rem,7vw,6.5rem)', fontWeight:700, lineHeight:1.02, letterSpacing:'-0.04em', marginBottom:20, fontFamily:'Space Grotesk' }}>
@@ -63,14 +63,14 @@ export default function FinalCTA() {
           </h2>
 
           <p style={{ fontSize:18, color:'#64748B', maxWidth:560, margin:'0 auto 18px', lineHeight:1.72 }}>
-            Join the first 500 creators. Free for life. Between 500 and 2,500 real creators will watch, save and share every post you publish — within 48 hours.
+            Join Torque Network. Between 500 and 2,500 real creators will watch, save and share every post you publish — within 48 hours.
           </p>
           <p style={{ fontSize:14, color:'#F59E0B', maxWidth:460, margin:'0 auto 52px', lineHeight:1.65, fontWeight:600 }}>
-            Stay free by engaging regularly with all posts. Once all 500 founding spots are taken, joining costs ₹1,500 per month.
+            Standard Member · ₹750 per month · Billed monthly · Cancel anytime.
           </p>
 
           <div style={{ display:'flex', flexWrap:'wrap', gap:16, justifyContent:'center', marginBottom:48 }}>
-            <motion.a href="#community"
+            <motion.a href="/signup"
               style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:16, padding:'18px 38px', borderRadius:16,
                 background:'linear-gradient(135deg,#D97706,#F59E0B)', color:'#fff', fontWeight:700, textDecoration:'none',
                 boxShadow:'0 0 30px rgba(245,158,11,0.4)' }}
@@ -78,7 +78,7 @@ export default function FinalCTA() {
               whileTap={{ scale:0.97 }}
               animate={{ boxShadow:['0 0 20px rgba(245,158,11,0.3)','0 0 55px rgba(245,158,11,0.55)','0 0 20px rgba(245,158,11,0.3)'] }}
               transition={{ duration:3, repeat:Infinity }}>
-              Claim Your Free Founding Spot <ArrowRight size={18}/>
+              Subscribe — ₹750/month <ArrowRight size={18}/>
             </motion.a>
             <a href="#how-it-works" className="btn-ghost" style={{ fontSize:16, padding:'18px 36px', borderRadius:16, textDecoration:'none' }}>
               See How It Works
@@ -99,7 +99,7 @@ export default function FinalCTA() {
           </motion.div>
 
           <p style={{ fontSize:11, color:'#2D3748', marginTop:28 }}>
-            Amplification Network for Instagram Creators · Free for life for the first 500 · Engage regularly to keep it free
+            Amplification Network for Instagram Creators · ₹750/month · Cancel anytime
           </p>
         </motion.div>
       </div>

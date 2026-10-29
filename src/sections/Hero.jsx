@@ -396,7 +396,7 @@ export default function Hero() {
               }}
             >
               <motion.a
-                href="#community"
+                href="#pricing"
                 whileHover={{
                   scale: 1.05,
                   boxShadow: "0 0 35px rgba(245,158,11,.55)",
@@ -424,7 +424,7 @@ export default function Hero() {
                     "0 0 0 1px rgba(255,255,255,.05) inset,0 10px 28px rgba(245,158,11,.35)",
                 }}
               >
-                Join the Founding 500 for Free
+                Join Torque Network
                 <ArrowRight size={18} />
               </motion.a>
 
@@ -485,7 +485,7 @@ export default function Hero() {
                     color: "#F8FAFC",
                   }}
                 >
-                  Founding spots filling fast
+                  Creators across every niche
                 </div>
                 <div
                   style={{
@@ -494,7 +494,7 @@ export default function Hero() {
                     marginTop: 2,
                   }}
                 >
-                  First 100 creators · Rate locked for life
+                  ₹750/month · Cancel anytime
                 </div>
               </div>
             </motion.div>

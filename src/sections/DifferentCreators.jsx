@@ -336,7 +336,7 @@ export default function DifferentCreators() {
   whileHover={{ scale: 1.05 }}
   whileTap={{ scale: 0.98 }}
   onClick={() => {
-    document.getElementById("community")?.scrollIntoView({
+    document.getElementById("pricing")?.scrollIntoView({
       behavior: "smooth",
     });
   }}
@@ -352,7 +352,7 @@ export default function DifferentCreators() {
     boxShadow: "0 14px 40px rgba(250,204,21,.35)",
   }}
 >
-  Join the Founding 500 →
+  Join Torque Network →
 </motion.button>
         </div>
       </div>
