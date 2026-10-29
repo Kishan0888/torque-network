@@ -73,3 +73,16 @@ describe('Instagram selection and precedence', () => {
     expect(withPlan('/account', 'plan_TthdcK6RJ9gUFE')).toBe('/account')
   })
 })
+
+describe('cart emptied / purchase finished', () => {
+  it('forgetPlan clears the remembered selection so the cart stays empty', async () => {
+    const { forgetPlan } = await import('../src/lib/planSelection.js')
+    const m = new Map()
+    const storage = { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, v), removeItem: (k) => m.delete(k) }
+    rememberPlan('linkedin', storage)
+    expect(selectedPlan({ search: '', storage })).toBe('linkedin')
+    forgetPlan(storage)
+    expect(selectedPlan({ search: '', storage })).toBe(null)
+    expect(() => forgetPlan({ removeItem: () => { throw new Error('blocked') } })).not.toThrow()
+  })
+})

@@ -4,9 +4,9 @@ import { apiFetch } from '../../lib/api'
 import { openSubscriptionCheckout, preloadCheckout } from '../../lib/razorpayCheckout'
 import { navigate } from '../../lib/router'
 import { useAuth } from '../AuthProvider'
-import { selectedPlan } from '../../lib/planSelection'
+import { selectedPlan, rememberPlan, forgetPlan } from '../../lib/planSelection'
 import { AuthShell, Field, Notice, MIN_PASSWORD } from '../ui'
-import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, Briefcase, RotateCcw, Zap, Loader } from 'lucide-react'
+import { Check, Lock, ShieldCheck, ArrowRight, Sparkles, Briefcase, RotateCcw, Zap, Loader, ShoppingCart, X } from 'lucide-react'
 
 // Display only. The amount actually charged comes from each product's Razorpay
 // plan on the server (instagram -> RAZORPAY_PLAN_ID, linkedin ->
@@ -43,6 +43,11 @@ const PLANS = [
 ]
 const priceLabel = (plan) => `${plan.price} / month`
 
+const IN_PROGRESS = ['active', 'authenticated', 'pending', 'paused']
+/** A product can go in the cart only if it is offered and the user doesn't already have it. */
+const canPurchase = (state) =>
+  Boolean(state?.available) && !state.entitled && !(state.subscription && IN_PROGRESS.includes(state.subscription.status))
+
 const STATUS_COPY = {
   active: ['Active', 'success'],
   authenticated: ['Payment authorised — activating', 'info'],
@@ -72,6 +77,9 @@ export default function Account() {
   const [membershipError, setMembershipError] = useState('')
   const [payments, setPayments] = useState([])
   const [busyProduct, setBusyProduct] = useState(null) // product key while an action runs
+  // Cart holds ONE membership. undefined = the user hasn't touched the cart yet
+  // (then the plan picked on the homepage is pre-added); null = empty.
+  const [cartChoice, setCartChoice] = useState(undefined)
   const [notice, setNotice] = useState(() =>
     new URLSearchParams(window.location.search).get('verified') ? ['success', 'Email verified — welcome to Torque Network!'] : null,
   )
@@ -131,6 +139,8 @@ export default function Account() {
         verified.status === 'active' ? loadMembership().then(() => true) : waitForActivation(plan.key),
         loadPayments(),
       ])
+      setCartChoice(null)
+      clearRememberedPlan()
       setNotice(active
         ? ['success', `Your ${plan.eyebrow} membership is active. Welcome aboard!`]
         : ['info', 'Payment verified. Activation can take a minute — refresh this page shortly.'])
@@ -167,12 +177,43 @@ export default function Account() {
     membership?.products?.[key] ??
     (key === 'instagram' && membership ? { available: true, entitled: membership.entitled, subscription: membership.subscription } : null)
   // The plan picked on the homepage (?plan=…, kept through signup/login) is shown first.
-  const preferred = selectedPlan({ user })
+  // Read once on page load so the product order doesn't jump when the cart changes.
+  const [preferred] = useState(() => selectedPlan({ user }))
   const visiblePlans = PLANS
     .filter((plan) => productState(plan.key)?.available)
     .sort((a, b) => (b.key === preferred) - (a.key === preferred))
   const preferredPlan = PLANS.find((plan) => plan.key === preferred)
   const preferredUnavailable = Boolean(membership && preferredPlan && !productState(preferredPlan.key)?.available)
+
+  // Cart: exactly one product (or empty). Products the user already has can't be in it.
+  const cartKey = cartChoice !== undefined ? cartChoice : preferred
+  const cartPlan = PLANS.find((plan) => plan.key === cartKey && canPurchase(productState(plan.key))) || null
+
+  // Clear every remembered selection so an emptied/finished cart stays empty.
+  function clearRememberedPlan() {
+    forgetPlan()
+    if (user?.user_metadata?.selected_plan) {
+      supabase.auth.updateUser({ data: { selected_plan: null } }).catch(() => {})
+    }
+  }
+
+  function addToCart(plan) {
+    setNotice(null)
+    setCartChoice(plan.key)
+    rememberPlan(plan.key)
+    requestAnimationFrame(() => document.getElementById('cart')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+
+  function removeFromCart() {
+    setCartChoice(null)
+    clearRememberedPlan()
+    // Drop ?plan=… so a refresh doesn't put it back.
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('plan')) {
+      url.searchParams.delete('plan')
+      window.history.replaceState({}, '', url.pathname + url.search + url.hash)
+    }
+  }
 
   // Download Razorpay Checkout as soon as the page opens (unless the user
   // already has every membership), in parallel with loading membership status,
@@ -198,10 +239,15 @@ export default function Account() {
           plan={plan}
           state={productState(plan.key)}
           busyProduct={busyProduct}
-          onSubscribe={() => subscribe(plan)}
+          inCart={cartPlan?.key === plan.key}
+          onAddToCart={() => addToCart(plan)}
+          onRemoveFromCart={removeFromCart}
           onCancel={(sub) => cancel(plan, sub)}
         />
       ))}
+      {membership && visiblePlans.some((plan) => canPurchase(productState(plan.key))) && (
+        <CartSummary plan={cartPlan} busyProduct={busyProduct} onCheckout={() => cartPlan && subscribe(cartPlan)} onRemove={removeFromCart} />
+      )}
       <style>{`
         @keyframes member-spin { to { transform: rotate(360deg); } }
         @media (max-width: 520px) {
@@ -246,13 +292,12 @@ export default function Account() {
   )
 }
 
-function MembershipCard({ plan, state, busyProduct, onSubscribe, onCancel }) {
+function MembershipCard({ plan, state, busyProduct, inCart, onAddToCart, onRemoveFromCart, onCancel }) {
   const sub = state.subscription
   const busy = Boolean(busyProduct)
-  const thisBusy = busyProduct === plan.key
   const [statusLabel, statusTone] = sub ? STATUS_COPY[sub.status] || [sub.status, 'info'] : []
   const canCancel = sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status) && !sub.cancel_at_cycle_end
-  const canSubscribe = !state.entitled && !(sub && ['active', 'authenticated', 'pending', 'paused'].includes(sub.status))
+  const canSubscribe = canPurchase(state)
 
   const statusLines = sub ? [
     sub.current_end && (
@@ -310,19 +355,78 @@ function MembershipCard({ plan, state, busyProduct, onSubscribe, onCancel }) {
       {canSubscribe ? (
         <>
           {sub && statusDetails && <div style={{ ...summaryBox, marginBottom: 0 }}>{statusDetails}</div>}
+          {inCart ? (
+            <div style={inCartRow}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#4ADE80' }}>
+                <Check size={16} strokeWidth={3} /> Added to cart
+              </span>
+              <button type="button" className="btn-ghost" disabled={busy} onClick={onRemoveFromCart} style={{ padding: '9px 16px', fontSize: 13 }}>
+                <X size={14} /> Remove
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="btn-ghost" disabled={busy} onClick={onAddToCart} style={addToCartBtn}>
+              <ShoppingCart size={16} /> Add to Cart · {priceLabel(plan)}
+            </button>
+          )}
+        </>
+      ) : (
+        <div style={summaryBox}>
+          {sub ? statusDetails : <p style={muted}>You don’t have a membership yet.</p>}
+          {state.entitled && <div style={{ marginTop: 12 }}><Notice tone="success">You have full member access.</Notice></div>}
+          {canCancel && (
+            <button type="button" className="btn-ghost" disabled={busy} onClick={() => onCancel(sub)} style={{ marginTop: 4 }}>Cancel membership</button>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function CartSummary({ plan, busyProduct, onCheckout, onRemove }) {
+  const busy = Boolean(busyProduct)
+  const thisBusy = Boolean(plan) && busyProduct === plan.key
+  return (
+    <section id="cart" style={{ ...card, ...memberCard }} aria-labelledby="cart-h" className="member-card">
+      <div aria-hidden style={memberGlowLine} />
+      <h2 id="cart-h" style={{ ...h2, fontSize: 18, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <ShoppingCart size={18} color="#22D3EE" /> Your Cart
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B' }}>{plan ? '1 item' : 'Empty'}</span>
+      </h2>
+
+      {!plan ? (
+        <p style={muted}>Your cart is empty. Choose a membership above and tap <strong style={{ color: '#E2E8F0' }}>Add to Cart</strong>.</p>
+      ) : (
+        <>
+          {/* Cart item */}
+          <div style={productRow} className="member-product">
+            <div style={productIcon} aria-hidden><plan.Icon size={22} color="#fff" /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#22D3EE', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{plan.eyebrow}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>{plan.name}</div>
+              <button type="button" onClick={onRemove} disabled={busy} style={removeLink}>Remove</button>
+            </div>
+            <div style={{ textAlign: 'right' }} className="member-price">
+              <div style={{ ...priceText, fontSize: 24 }}>{plan.price}</div>
+              <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>per month</div>
+            </div>
+          </div>
+
           {/* Order summary */}
-          <div style={summaryBox} aria-label={`${plan.eyebrow} order summary`}>
+          <div style={summaryBox} aria-label="Order summary">
             <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD5E1', marginBottom: 10 }}>Order summary</div>
-            <SummaryRow label="Plan" value={plan.name} />
-            <SummaryRow label="Billing" value="Monthly, until you cancel" />
+            <SummaryRow label="Product" value={`${plan.eyebrow} — ${plan.name}`} />
+            <SummaryRow label="Monthly price" value={priceLabel(plan)} />
+            <SummaryRow label="Billing" value="Monthly recurring, until you cancel" />
             <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC' }}>Due today</span>
               <span style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk', letterSpacing: '-0.02em' }}>{plan.price}</span>
             </div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 6 }}>Then {plan.price} every month. Only this membership is charged.</div>
           </div>
 
-          <button type="button" className="btn-primary" disabled={busy} onClick={onSubscribe} style={checkoutBtn(thisBusy)}>
+          <button type="button" className="btn-primary" disabled={busy} onClick={onCheckout} style={checkoutBtn(thisBusy)}>
             {thisBusy ? (
               <><Loader size={17} style={{ animation: 'member-spin 0.8s linear infinite' }} /> Opening secure checkout…</>
             ) : (
@@ -336,14 +440,6 @@ function MembershipCard({ plan, state, busyProduct, onSubscribe, onCancel }) {
             <span style={trustItem}><Zap size={14} color="#F59E0B" /> Access starts after payment</span>
           </div>
         </>
-      ) : (
-        <div style={summaryBox}>
-          {sub ? statusDetails : <p style={muted}>You don’t have a membership yet.</p>}
-          {state.entitled && <div style={{ marginTop: 12 }}><Notice tone="success">You have full member access.</Notice></div>}
-          {canCancel && (
-            <button type="button" className="btn-ghost" disabled={busy} onClick={() => onCancel(sub)} style={{ marginTop: 4 }}>Cancel membership</button>
-          )}
-        </div>
       )}
     </section>
   )
@@ -389,6 +485,18 @@ const checkoutBtn = (busy) => ({
 })
 const trustRow = {
   display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '8px 18px', marginTop: 14,
+}
+const addToCartBtn = {
+  width: '100%', justifyContent: 'center', marginTop: 18, padding: '14px 22px', fontSize: 15, fontWeight: 700, borderRadius: 14,
+  border: '1px solid rgba(34,211,238,0.45)', color: '#E0F2FE', background: 'rgba(34,211,238,0.08)',
+}
+const inCartRow = {
+  marginTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+  padding: '12px 14px', borderRadius: 14, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
+}
+const removeLink = {
+  marginTop: 4, padding: 0, background: 'none', border: 'none', color: '#94A3B8', fontSize: 12,
+  textDecoration: 'underline', cursor: 'pointer',
 }
 const trustItem = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#94A3B8' }
 

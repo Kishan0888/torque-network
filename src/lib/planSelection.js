@@ -43,6 +43,16 @@ export function rememberPlan(plan, storage = browserStorage()) {
   }
 }
 
+/** Forget the remembered selection (e.g. the cart was emptied or the purchase finished). */
+export function forgetPlan(storage = browserStorage()) {
+  if (!storage) return
+  try {
+    storage.removeItem(STORAGE_KEY)
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 function storedPlan(storage) {
   if (!storage) return null
   try {
