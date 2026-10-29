@@ -4,6 +4,7 @@ import { useAuth } from '../AuthProvider'
 import { navigate, Redirect } from '../../lib/router'
 import { selectedPlan, withPlan, postAuthPath } from '../../lib/planSelection'
 import { AuthShell, Field, SubmitButton, Notice, FooterLinks, TextLink } from '../ui'
+import GoogleButton from '../GoogleButton'
 
 export default function Login() {
   const { user } = useAuth()
@@ -49,6 +50,7 @@ export default function Login() {
           Resend verification email
         </button>
       )}
+      <GoogleButton plan={plan} onError={setError} />
       <form onSubmit={onSubmit} noValidate>
         <Field label="Email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <Field label="Password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />

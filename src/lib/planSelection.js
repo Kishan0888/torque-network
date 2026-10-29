@@ -89,3 +89,44 @@ export function postAuthPath(plan, extraQuery = '') {
   const base = validPlan(plan) ? '/checkout' : '/account'
   return withPlan(extraQuery ? `${base}?${extraQuery}` : base, plan)
 }
+
+// ── Google (OAuth) sign-in ──────────────────────────────────────────────────
+// Supabase only redirects back to URLs on its allow list (exact match, query
+// string included), so the plan can't ride along in the OAuth return URL.
+// Instead a single-use "intent" is saved right before leaving for Google and
+// read once on /auth/callback. Google always returns to the same browser.
+const OAUTH_KEY = 'torque_oauth_intent'
+export const OAUTH_INTENT_MAX_AGE_MS = 30 * 60 * 1000
+
+/** Save which plan (or none) the user had chosen when they clicked "Continue with Google". */
+export function rememberOAuthIntent(plan, storage = browserStorage(), now = Date.now()) {
+  if (!storage) return
+  try {
+    storage.setItem(OAUTH_KEY, JSON.stringify({ plan: validPlan(plan), at: now }))
+  } catch {
+    /* storage unavailable: callback falls back to the normal selection rules */
+  }
+}
+
+/**
+ * Read and delete the OAuth intent. Returns { plan } (plan may be null = no
+ * plan chosen) or null if there is no fresh intent.
+ */
+export function takeOAuthIntent(storage = browserStorage(), now = Date.now()) {
+  if (!storage) return null
+  let raw = null
+  try {
+    raw = storage.getItem(OAUTH_KEY)
+    storage.removeItem(OAUTH_KEY)
+  } catch {
+    return null
+  }
+  if (!raw) return null
+  try {
+    const { plan, at } = JSON.parse(raw)
+    if (typeof at !== 'number' || now - at > OAUTH_INTENT_MAX_AGE_MS || at > now + 60_000) return null
+    return { plan: validPlan(plan) }
+  } catch {
+    return null
+  }
+}

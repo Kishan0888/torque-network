@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthProvider'
 import { navigate } from '../../lib/router'
-import { selectedPlan, postAuthPath, validPlan } from '../../lib/planSelection'
+import { selectedPlan, postAuthPath, validPlan, takeOAuthIntent } from '../../lib/planSelection'
 import { AuthShell, Notice, FooterLinks, TextLink, Loading } from '../ui'
 
 /** Supabase reports link problems in the URL hash or query (e.g. expired links). */
@@ -17,15 +17,26 @@ export function readAuthErrorFromUrl() {
 // remembers, so opening the email on another device can't switch products.
 const planForVerifiedUser = (user) => validPlan(user?.user_metadata?.selected_plan) || selectedPlan({ user })
 
-/** Landing page for the email verification link. */
+// Google sign-in leaves a single-use note of the plan chosen when the button
+// was clicked. Read it exactly once per page load (also safe under StrictMode).
+let oauthIntentOnce
+const readOAuthIntentOnce = () => (oauthIntentOnce === undefined ? (oauthIntentOnce = takeOAuthIntent()) : oauthIntentOnce)
+
+/** Landing page for the email verification link and the Google sign-in return. */
 export default function AuthCallback() {
   const { session, loading, recovery } = useAuth()
   const [linkError] = useState(readAuthErrorFromUrl)
+  const [oauthIntent] = useState(readOAuthIntentOnce)
 
   useEffect(() => {
     if (loading || linkError) return
-    if (session) navigate(recovery ? '/reset-password' : postAuthPath(planForVerifiedUser(session.user), 'verified=1'), { replace: true })
-  }, [loading, session, recovery, linkError])
+    if (!session) return
+    if (recovery) return navigate('/reset-password', { replace: true })
+    // Returning from Google: go to the checkout for the plan chosen before
+    // leaving (or the dashboard if none) — never a different, older choice.
+    if (oauthIntent) return navigate(postAuthPath(oauthIntent.plan), { replace: true })
+    navigate(postAuthPath(planForVerifiedUser(session.user), 'verified=1'), { replace: true })
+  }, [loading, session, recovery, linkError, oauthIntent])
 
   if (loading || (session && !linkError)) return <Loading />
 

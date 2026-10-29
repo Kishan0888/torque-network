@@ -4,6 +4,7 @@ import { useAuth } from '../AuthProvider'
 import { navigate, Redirect } from '../../lib/router'
 import { selectedPlan, withPlan, postAuthPath } from '../../lib/planSelection'
 import { AuthShell, Field, SubmitButton, Notice, FooterLinks, TextLink, MIN_PASSWORD } from '../ui'
+import GoogleButton from '../GoogleButton'
 
 export default function Signup() {
   const { user } = useAuth()
@@ -63,6 +64,7 @@ export default function Signup() {
   return (
     <AuthShell title="Create your account" subtitle="Join Torque Network and manage your membership.">
       {error && <Notice tone="error">{error}</Notice>}
+      <GoogleButton plan={plan} onError={setError} />
       <form onSubmit={onSubmit} noValidate>
         <Field label="Full name" name="fullName" autoComplete="name" required maxLength={120} value={form.fullName} onChange={set('fullName')} />
         <Field label="Mobile number" name="phone" type="tel" autoComplete="tel" placeholder="+91 98765 43210" maxLength={20} value={form.phone} onChange={set('phone')} />
