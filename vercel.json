@@ -1,21 +1,62 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["bom1"],
+  "regions": [
+    "bom1"
+  ],
   "rewrites": [
-    { "source": "/login", "destination": "/account.html" },
-    { "source": "/signup", "destination": "/account.html" },
-    { "source": "/forgot-password", "destination": "/account.html" },
-    { "source": "/reset-password", "destination": "/account.html" },
-    { "source": "/auth/callback", "destination": "/account.html" },
-    { "source": "/account", "destination": "/account.html" },
-    { "source": "/checkout", "destination": "/account.html" }
+    {
+      "source": "/login",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/forgot-password",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/reset-password",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/auth/callback",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/account",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "/account.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/account.html"
+    }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
       ]
     }
   ]

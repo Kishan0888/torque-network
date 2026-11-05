@@ -88,6 +88,11 @@ export default function Account() {
     <AuthShell title="Your account" subtitle={user.email} wide>
       {notice && <Notice tone={notice[0]}>{notice[1]}</Notice>}
 
+      {membership && (membership.products?.instagram?.entitled || membership.products?.linkedin?.entitled || membership.entitled) && (
+        <button type="button" className="btn-primary" onClick={() => navigate('/dashboard')} style={{ width: '100%', justifyContent: 'center', marginBottom: 18, padding: '15px 22px', fontSize: 15 }}>
+          Open member dashboard <ArrowRight size={16} />
+        </button>
+      )}
       <h2 id="membership-h" style={{ ...h2, fontSize: 20, margin: '4px 0 14px' }}>Your Membership</h2>
       {membershipError && <Notice tone="error">{membershipError}</Notice>}
       {!membership && !membershipError && <section style={card}><p style={muted}>Loading membership…</p></section>}

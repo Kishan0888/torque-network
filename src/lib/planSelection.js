@@ -82,11 +82,12 @@ export function withPlan(path, plan) {
 
 /**
  * Where to send the user after signup / login / email verification:
- * the dedicated checkout for the plan they picked, or the account dashboard.
+ * the dedicated checkout for the plan they picked, or the member dashboard.
  * `extraQuery` (e.g. "verified=1") is kept.
  */
 export function postAuthPath(plan, extraQuery = '') {
-  const base = validPlan(plan) ? '/checkout' : '/account'
+  // No plan picked: members land on their dashboard (non-members are sent on to /account from there).
+  const base = validPlan(plan) ? '/checkout' : '/dashboard'
   return withPlan(extraQuery ? `${base}?${extraQuery}` : base, plan)
 }
 

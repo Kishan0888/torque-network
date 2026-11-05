@@ -33,7 +33,7 @@ describe('Google sign-in keeps the selected product across the OAuth round trip'
     rememberOAuthIntent(null, storage, 0)
     const intent = takeOAuthIntent(storage, 1)
     expect(intent).toEqual({ plan: null })
-    expect(postAuthPath(intent.plan)).toBe('/account')
+    expect(postAuthPath(intent.plan)).toBe('/dashboard')
   })
 
   it('is single-use: a second callback visit gets nothing', () => {

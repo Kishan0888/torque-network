@@ -15,6 +15,11 @@ import ResetPassword from './auth/pages/ResetPassword'
 import AuthCallback from './auth/pages/AuthCallback'
 import Account from './auth/pages/Account'
 import Checkout from './auth/pages/Checkout'
+import { lazy, Suspense } from 'react'
+// Member dashboard + admin load on demand (only members/admins need them).
+const DashboardApp = lazy(() => import('./dashboard/DashboardApp'))
+const AdminApp = lazy(() => import('./admin/AdminApp'))
+const isDashboard = (p) => p === '/dashboard' || p.startsWith('/dashboard/')
 
 const pages = {
   '/login': Login,
@@ -29,7 +34,7 @@ const PROTECTED = new Set(['/account', '/checkout'])
 
 export default function AccountApp() {
   const path = usePathname().replace(/\/+$/, '') || '/'
-  const known = ACCOUNT_ROUTES.includes(path)
+  const known = ACCOUNT_ROUTES.includes(path) || isDashboard(path) || path === '/admin'
 
   // Keep the plan picked on the homepage (?plan=…) for the rest of the flow.
   useEffect(() => {
@@ -43,6 +48,17 @@ export default function AccountApp() {
 
   if (!known) return null
   if (!supabaseConfigured) return <NotConfigured />
+
+  if (isDashboard(path) || path === '/admin') {
+    const App = path === '/admin' ? AdminApp : DashboardApp
+    return (
+      <AuthProvider>
+        <RequireAuth>
+          <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f3eee4' }} />}><App /></Suspense>
+        </RequireAuth>
+      </AuthProvider>
+    )
+  }
 
   const Page = pages[path]
   const content = <Page />

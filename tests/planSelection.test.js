@@ -105,7 +105,7 @@ describe('dedicated checkout: product is locked through every redirect', () => {
   it('email verification keeps the plan and the verified flag', async () => {
     const { postAuthPath } = await import('../src/lib/planSelection.js')
     expect(postAuthPath('linkedin', 'verified=1')).toBe('/checkout?verified=1&plan=linkedin')
-    expect(postAuthPath(null, 'verified=1')).toBe('/account?verified=1')
+    expect(postAuthPath(null, 'verified=1')).toBe('/dashboard?verified=1')
   })
 
   it('a stale remembered choice never overrides the product in the URL', () => {
@@ -116,7 +116,7 @@ describe('dedicated checkout: product is locked through every redirect', () => {
 
   it('no plan chosen → the account dashboard, never a checkout', async () => {
     const { postAuthPath } = await import('../src/lib/planSelection.js')
-    expect(postAuthPath(null)).toBe('/account')
-    expect(postAuthPath('plan_TthdcK6RJ9gUFE')).toBe('/account')
+    expect(postAuthPath(null)).toBe('/dashboard')
+    expect(postAuthPath('plan_TthdcK6RJ9gUFE')).toBe('/dashboard')
   })
 })

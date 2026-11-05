@@ -149,8 +149,8 @@ export default function Checkout() {
                 ? `Welcome to ${plan.eyebrow}. You'll be billed ${priceLabel(plan)} until you cancel.`
                 : 'Activation can take a minute. Your account page will show it as Active shortly.'}
             </p>
-            <button type="button" className="btn-primary" onClick={goToAccount} style={checkoutBtn(false)}>
-              Go to my account <ArrowRight size={17} />
+            <button type="button" className="btn-primary" onClick={() => { forgetPlan(); navigate(`/dashboard?platform=${plan.key}`, { replace: true }) }} style={checkoutBtn(false)}>
+              {done.active ? 'Set up my member dashboard' : 'Go to my dashboard'} <ArrowRight size={17} />
             </button>
           </div>
         ) : !membership && !loadError ? (
@@ -162,9 +162,9 @@ export default function Checkout() {
           </div>
         ) : alreadyOwned ? (
           <div style={{ marginTop: 18 }}>
-            <Notice tone="success">You already have {plan.eyebrow}. There’s nothing to pay — manage it from your account.</Notice>
-            <button type="button" className="btn-primary" onClick={goToAccount} style={checkoutBtn(false)}>
-              Manage my membership <ArrowRight size={17} />
+            <Notice tone="success">You already have {plan.eyebrow}. There’s nothing to pay — open your member dashboard.</Notice>
+            <button type="button" className="btn-primary" onClick={() => { forgetPlan(); navigate(`/dashboard?platform=${plan.key}`, { replace: true }) }} style={checkoutBtn(false)}>
+              Open my dashboard <ArrowRight size={17} />
             </button>
           </div>
         ) : (
