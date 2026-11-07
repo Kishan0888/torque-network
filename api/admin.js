@@ -11,6 +11,8 @@
  * POST guide      { id?, platform, domain, month: "YYYY-MM", theme, weeks[], also_inside, pdf_url, published }
  * POST guide-delete { id }
  * GET  members
+ * GET  leads      ?status=
+ * POST lead-status { id, status }
  */
 import { handle, json, HttpError, readOptionalJson } from './_lib/http.js'
 import { requireUser } from './_lib/auth.js'
@@ -145,6 +147,23 @@ async function members() {
   return { members: rows }
 }
 
+const LEAD_STATUSES = ['new', 'contacted', 'converted', 'not_interested']
+async function leads(url) {
+  let q = db().from('leads').select('*').order('created_at', { ascending: false }).limit(1000)
+  const status = url.searchParams.get('status')
+  if (LEAD_STATUSES.includes(status)) q = q.eq('status', status)
+  const { data, error } = await q
+  if (error) throw error
+  return { leads: data }
+}
+async function leadStatus(body) {
+  if (!UUID.test(body.id || '')) throw new HttpError(400, 'Missing lead.')
+  if (!LEAD_STATUSES.includes(body.status)) throw new HttpError(400, 'Unknown status.')
+  const { data, error } = await db().from('leads').update({ status: body.status }).eq('id', body.id).select('*').single()
+  if (error) throw error
+  return { lead: data }
+}
+
 export const GET = handle(async (request) => {
   const user = await requireUser(request)
   await requireAdmin(user.id)
@@ -154,6 +173,7 @@ export const GET = handle(async (request) => {
     case 'resources': return json(await resources())
     case 'guides': return json(await guides(url))
     case 'members': return json(await members())
+    case 'leads': return json(await leads(url))
     default: throw new HttpError(404, 'Unknown action.')
   }
 })
@@ -169,6 +189,7 @@ export const POST = handle(async (request) => {
     case 'resource-delete': return json(await deleteRow('resources', body.id))
     case 'guide': return json(await saveGuide(body))
     case 'guide-delete': return json(await deleteRow('monthly_guides', body.id))
+    case 'lead-status': return json(await leadStatus(body))
     default: throw new HttpError(404, 'Unknown action.')
   }
 })

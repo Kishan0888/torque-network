@@ -8,7 +8,7 @@ import { Link } from '../lib/router'
 import '../dashboard/dashboard.css'
 import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId } from '../../shared/memberConfig.js'
 
-const TABS = [['review', 'Review posts'], ['resources', 'Resources'], ['guides', 'Monthly guides'], ['members', 'Members']]
+const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['guides', 'Monthly guides'], ['members', 'Members']]
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '—')
 
 function useApi(path) {
@@ -22,7 +22,7 @@ function useApi(path) {
 }
 
 export default function AdminApp() {
-  const [tab, setTab] = useState('review')
+  const [tab, setTab] = useState('leads')
   const probe = useApi('/api/admin?action=posts&status=pending')
   if (probe.loading && !probe.data) return <div className="tn-dash"><div className="tn-main"><p className="tn-loading">Loading admin panel…</p></div></div>
   if (probe.error) {
@@ -50,6 +50,7 @@ export default function AdminApp() {
         {tab === 'resources' && <ResourcesAdmin />}
         {tab === 'guides' && <GuidesAdmin />}
         {tab === 'members' && <Members />}
+        {tab === 'leads' && <Leads />}
       </div></div>
     </div>
   )
@@ -269,6 +270,62 @@ function GuidesAdmin() {
           </table></div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Leads (landing-page form) ─────────────────────────────────────────────
+const LEAD_STATUS = [['new', 'New'], ['contacted', 'Contacted'], ['converted', 'Converted'], ['not_interested', 'Not interested']]
+function Leads() {
+  const [status, setStatus] = useState('')
+  const { data, error, reload } = useApi(`/api/admin?action=leads${status ? `&status=${status}` : ''}`)
+  const [msg, setMsg] = useState(null)
+  async function setLeadStatus(lead, next) {
+    try { await apiFetch('/api/admin?action=lead-status', { method: 'POST', body: { id: lead.id, status: next } }); reload() } catch (e) { setMsg(e.message) }
+  }
+  function downloadCsv() {
+    const cols = ['created_at', 'name', 'phone', 'email', 'industry', 'experience', 'profile_url', 'status', 'platform', 'page', 'utm_source', 'utm_medium', 'utm_campaign']
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const csv = [cols.join(','), ...data.leads.map((l) => cols.map((c) => esc(c === 'created_at' ? new Date(l[c]).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : l[c])).join(','))].join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }))
+    a.download = `torque-leads-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+  }
+  return (
+    <div className="tn-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10, alignItems: 'center' }}>
+        <h2 style={{ margin: 0 }}>Landing page leads {data && <span className="tn-small">({data.leads.length})</span>}</h2>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <select className="tn-select" style={{ width: 'auto' }} value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">All statuses</option>{LEAD_STATUS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <button className="tn-btn small" disabled={!data?.leads.length} onClick={downloadCsv}>Download CSV</button>
+        </div>
+      </div>
+      {(error || msg) && <div className="tn-notice error">{error || msg}</div>}
+      {!data ? <p className="tn-loading">Loading…</p> : data.leads.length === 0 ? <p className="tn-small">No leads yet. They appear here as soon as someone submits the form on torquenetwork.in/landing-linkedin.</p> : (
+        <div className="tn-table-wrap"><table className="tn-table">
+          <thead><tr><th>When</th><th>Name</th><th>Contact</th><th>Industry</th><th>Source</th><th>Status</th></tr></thead>
+          <tbody>{data.leads.map((l) => (
+            <tr key={l.id}>
+              <td className="tn-small" style={{ whiteSpace: 'nowrap' }}>{fmt(l.created_at)}</td>
+              <td><div style={{ fontWeight: 700 }}>{l.name}</div>{l.profile_url && <a href={l.profile_url} target="_blank" rel="noopener noreferrer" className="tn-link" style={{ fontSize: 12 }}>LinkedIn ↗</a>}</td>
+              <td className="tn-small">
+                <a href={`https://wa.me/${l.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="tn-link" style={{ fontSize: 12 }}>{l.phone}</a>
+                {l.email && <div><a href={`mailto:${l.email}`} style={{ color: 'inherit' }}>{l.email}</a></div>}
+              </td>
+              <td className="tn-small">{l.industry || '—'}{l.experience ? ` · ${l.experience}` : ''}</td>
+              <td className="tn-small">{[l.utm_source, l.utm_campaign].filter(Boolean).join(' / ') || l.page || '—'}</td>
+              <td>
+                <select className="tn-select" style={{ width: 'auto', padding: '6px 8px', fontSize: 12 }} value={l.status} onChange={(e) => setLeadStatus(l, e.target.value)}>
+                  {LEAD_STATUS.map(([k, lab]) => <option key={k} value={k}>{lab}</option>)}
+                </select>
+              </td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      )}
     </div>
   )
 }

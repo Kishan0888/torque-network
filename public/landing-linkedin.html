@@ -56,6 +56,29 @@
     .video video, .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
     .video-cap { text-align: center; color: #9aa6b8; font-size: 13px; margin-top: 12px; }
 
+    /* lead form */
+    .form-card { background: #fff; color: var(--ink); border-radius: 18px; padding: 26px 26px 22px; box-shadow: 0 24px 60px rgba(0,0,0,.35); position: relative; }
+    .form-card h2 { font-size: 22px; margin: 0 0 4px; }
+    .form-card .sub { color: var(--muted); font-size: 13.5px; margin-bottom: 16px; }
+    .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .f-grid .full { grid-column: 1 / -1; }
+    .f label { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 5px; }
+    .f label small { font-weight: 500; color: var(--muted); }
+    .f input, .f select { width: 100%; border: 1px solid #d9d1c1; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 14px; color: var(--ink); background: #fff; outline: none; }
+    .f input:focus, .f select:focus { border-color: #9db8ef; box-shadow: 0 0 0 3px #e3ecfb; }
+    .f input.bad, .f select.bad { border-color: #d4552f; }
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    .form-card .btn { width: 100%; justify-content: center; margin-top: 16px; padding: 14px; font-size: 15.5px; }
+    .form-err { background: #fde8e2; color: #8f2a15; border-radius: 9px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; display: none; }
+    .form-note { text-align: center; color: var(--muted); font-size: 12px; margin-top: 10px; }
+    .form-done { display: none; text-align: center; padding: 10px 4px; }
+    .form-done .ok { width: 54px; height: 54px; border-radius: 50%; background: #e3f4ec; color: var(--green); font-size: 26px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .form-done h2 { margin-bottom: 8px; }
+    .form-done p { color: var(--muted); font-size: 14px; margin-bottom: 4px; }
+    .form-done .btn { margin-top: 10px; }
+    .form-done .btn-wa { background: #12805a; color: #fff; }
+    .video-row { max-width: 760px; margin: 56px auto 0; position: relative; z-index: 1; }
+
     section { padding: 88px 0; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 34px; }
@@ -109,6 +132,7 @@
     @media (max-width: 900px) {
       .hero-grid, .split { grid-template-columns: 1fr; }
       .grid-3 { grid-template-columns: 1fr; }
+      .video-row { margin-top: 40px; }
       .grid-4 { grid-template-columns: 1fr 1fr; }
       .nav-links a:not(.btn) { display: none; }
       section { padding: 64px 0; }
@@ -118,6 +142,8 @@
       .wrap { padding: 0 18px; }
       .hero-arc { width: 220px; height: 220px; border-width: 18px; right: -40px; top: -120px; }
       .hero-cta .btn { flex: 1; justify-content: center; }
+      .f-grid { grid-template-columns: 1fr; }
+      .form-card { padding: 22px 18px 18px; }
     }
   </style>
 </head>
@@ -154,15 +180,56 @@
           </div>
         </div>
         <div>
-          <div class="video" id="video">
-            <div class="c1"></div><div class="c2"></div>
-            <button class="play" type="button" id="play" aria-label="Play the explainer video">
-              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1b1405"/></svg>
-            </button>
-            <span class="tag" id="video-tag">Explainer video · about 1:50</span>
-          </div>
-          <p class="video-cap">See how Torque Network works in under two minutes</p>
+          <form class="form-card" id="lead-form" novalidate>
+            <div id="form-body">
+              <h2>Get started with Torque</h2>
+              <p class="sub">Share your details and our team will reach out on WhatsApp within 24 hours.</p>
+              <div class="form-err" id="form-err" role="alert"></div>
+              <div class="f-grid">
+                <div class="f full"><label for="lf-name">Full name</label><input id="lf-name" name="name" autocomplete="name" maxlength="120" placeholder="Your full name" /></div>
+                <div class="f"><label for="lf-phone">WhatsApp number</label><input id="lf-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="98765 43210" /></div>
+                <div class="f"><label for="lf-email">Email <small>(optional)</small></label><input id="lf-email" name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@email.com" /></div>
+                <div class="f"><label for="lf-industry">Industry</label>
+                  <select id="lf-industry" name="industry">
+                    <option value="">Select industry</option>
+                    <option>HR &amp; Talent</option><option>Finance &amp; Banking</option><option>Sales &amp; BD</option>
+                    <option>Marketing &amp; Creative</option><option>IT &amp; Software</option><option>Data &amp; AI</option>
+                    <option>Product</option><option>Consulting</option><option>Healthcare &amp; Pharma</option><option>Other</option>
+                  </select>
+                </div>
+                <div class="f"><label for="lf-exp">Experience</label>
+                  <select id="lf-exp" name="experience">
+                    <option value="">Select experience</option>
+                    <option>0–1 yrs</option><option>1–3 yrs</option><option>3–5 yrs</option><option>5–10 yrs</option><option>10+ yrs</option>
+                  </select>
+                </div>
+                <div class="f full"><label for="lf-profile">LinkedIn profile link <small>(optional)</small></label><input id="lf-profile" name="profile_url" inputmode="url" maxlength="300" placeholder="https://www.linkedin.com/in/your-name" /></div>
+              </div>
+              <div class="hp" aria-hidden="true"><label for="lf-website">Website</label><input id="lf-website" name="website" tabindex="-1" autocomplete="off" /></div>
+              <button class="btn btn-gold" type="submit" id="lf-submit">Get started →</button>
+              <p class="form-note">₹500/month after you join · No spam, ever</p>
+            </div>
+            <div class="form-done" id="form-done" role="status">
+              <div class="ok">✓</div>
+              <h2>Thank you!</h2>
+              <p>Our team will reach out on WhatsApp within 24 hours.</p>
+              <p>Ready now? Join in under two minutes.</p>
+              <a class="btn btn-gold" href="/signup?plan=linkedin">Subscribe Now — ₹500/month</a>
+              <a class="btn btn-wa" href="https://wa.me/917303566443?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20Torque%20Network%20for%20LinkedIn" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+            </div>
+          </form>
         </div>
+      </div>
+
+      <div class="video-row">
+        <div class="video" id="video">
+          <div class="c1"></div><div class="c2"></div>
+          <button class="play" type="button" id="play" aria-label="Play the explainer video">
+            <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1b1405"/></svg>
+          </button>
+          <span class="tag" id="video-tag">Explainer video · about 1:50</span>
+        </div>
+        <p class="video-cap">See how Torque Network works in under two minutes</p>
       </div>
     </div>
   </header>
@@ -306,6 +373,46 @@
         box.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       document.getElementById('play').addEventListener('click', play);
+
+      // ── Lead form → /api/lead (saved for the team in /admin → Leads)
+      var form = document.getElementById('lead-form');
+      var err = document.getElementById('form-err');
+      var btn = document.getElementById('lf-submit');
+      var q = new URLSearchParams(location.search);
+      function showError(msg, field) {
+        err.textContent = msg; err.style.display = 'block';
+        form.querySelectorAll('.bad').forEach(function (el) { el.classList.remove('bad'); });
+        if (field) { field.classList.add('bad'); field.focus(); }
+      }
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var v = function (id) { return document.getElementById(id).value.trim(); };
+        var digits = v('lf-phone').replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
+        if (v('lf-name').length < 2) return showError('Please enter your full name.', document.getElementById('lf-name'));
+        if (!/^[6-9]\d{9}$/.test(digits)) return showError('Please enter a valid 10-digit WhatsApp number.', document.getElementById('lf-phone'));
+        if (v('lf-email') && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('lf-email'))) return showError('Please enter a valid email address.', document.getElementById('lf-email'));
+        if (!v('lf-industry')) return showError('Please choose your industry.', document.getElementById('lf-industry'));
+        if (!v('lf-exp')) return showError('Please choose your experience.', document.getElementById('lf-exp'));
+        err.style.display = 'none';
+        btn.disabled = true; btn.textContent = 'Sending…';
+        fetch('/api/lead', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            platform: 'linkedin', name: v('lf-name'), phone: digits, email: v('lf-email'), industry: v('lf-industry'),
+            experience: v('lf-exp'), profile_url: v('lf-profile'), website: v('lf-website'), page: location.pathname,
+            utm_source: q.get('utm_source'), utm_medium: q.get('utm_medium'), utm_campaign: q.get('utm_campaign')
+          })
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok) throw new Error(res.d.error || 'Something went wrong. Please try again.');
+            document.getElementById('form-body').style.display = 'none';
+            document.getElementById('form-done').style.display = 'block';
+            if (window.fbq) window.fbq('track', 'Lead');
+            if (window.gtag) window.gtag('event', 'generate_lead');
+          })
+          .catch(function (ex) { showError(ex.message || 'Something went wrong. Please try again.'); })
+          .finally(function () { btn.disabled = false; btn.textContent = 'Get started →'; });
+      });
       document.getElementById('watch').addEventListener('click', play);
     })();
   </script>
