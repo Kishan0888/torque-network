@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Torque Network for LinkedIn — Stop posting into silence</title>
+  <meta name="description" content="Torque Network is a LinkedIn growth community where early-career professionals get genuine engagement, industry-specific content ideas and steady follower growth. ₹500/month." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta property="og:title" content="Torque Network for LinkedIn — Stop posting into silence" />
+  <meta property="og:description" content="Genuine engagement, weekly topic ideas and steady follower growth from peers in your own industry." />
+  <meta property="og:image" content="https://torquenetwork.in/logo-sm.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #101a2e; --navy-2: #1a263d; --cream: #faf6ee; --ink: #121826; --muted: #5d6676;
+      --gold: #f7b93e; --gold-ink: #1b1405; --orange: #ea5a2b; --blue: #2563eb; --green: #12805a;
+      --card-line: #ebe4d6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: var(--ink); background: var(--cream); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 13px 22px; font-weight: 700; font-size: 15px; text-decoration: none; border: 1.5px solid transparent; cursor: pointer; font-family: inherit; transition: transform .15s, filter .15s; }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn-gold { background: var(--gold); color: var(--gold-ink); }
+    .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.35); }
+    .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h1, h2, h3 { letter-spacing: -.025em; line-height: 1.12; }
+    h2 { font-size: clamp(26px, 3.6vw, 38px); font-weight: 800; margin-top: 10px; }
+
+    /* hero */
+    .hero { background: var(--navy); color: #fff; position: relative; overflow: hidden; padding-bottom: 88px; }
+    .hero-arc { position: absolute; width: 360px; height: 360px; right: 6%; top: -190px; border-radius: 50%; border: 26px solid var(--gold); border-left-color: transparent; border-bottom-color: transparent; transform: rotate(18deg); pointer-events: none; }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; position: relative; z-index: 2; }
+    nav img { height: 58px; margin: -10px 0 -10px -10px; display: block; }
+    .nav-links { display: flex; align-items: center; gap: 26px; font-size: 14px; font-weight: 600; }
+    .nav-links a:not(.btn) { text-decoration: none; color: #dbe1ec; }
+    .nav-links a:not(.btn):hover { color: #fff; }
+    .nav-links .btn { padding: 9px 16px; font-size: 14px; }
+    .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 40px; position: relative; z-index: 1; }
+    .pill { display: inline-block; background: rgba(247,185,62,.12); color: var(--gold); border: 1px solid rgba(247,185,62,.25); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; }
+    .hero h1 { font-size: clamp(38px, 5.4vw, 60px); font-weight: 800; margin: 18px 0 18px; }
+    .hero p.lead { color: #c9d1de; font-size: 17px; max-width: 520px; }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin: 28px 0 22px; }
+    .ticks { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; color: #dbe1ec; max-width: 520px; }
+    .ticks span::before { content: '✓'; color: var(--gold); font-weight: 800; margin-right: 8px; }
+    .video { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 10; background: #1d2a44; border: 1px solid rgba(255,255,255,.08); }
+    .video .c1 { position: absolute; width: 62%; aspect-ratio: 1; border-radius: 50%; background: #3a4150; right: -14%; top: -18%; }
+    .video .c2 { position: absolute; width: 46%; aspect-ratio: 1; border-radius: 50%; background: #213a6c; left: -10%; bottom: -26%; }
+    .video .play { position: absolute; inset: 0; margin: auto; width: 76px; height: 76px; border-radius: 50%; background: var(--gold); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); transition: transform .15s; }
+    .video .play:hover { transform: scale(1.06); }
+    .video .tag { position: absolute; left: 14px; bottom: 14px; font-size: 12px; background: rgba(0,0,0,.45); padding: 5px 10px; border-radius: 6px; color: #e5e9f0; }
+    .video video, .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+    .video-cap { text-align: center; color: #9aa6b8; font-size: 13px; margin-top: 12px; }
+
+    section { padding: 88px 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 34px; }
+    .card { background: #fff; border: 1px solid var(--card-line); border-radius: 16px; padding: 24px; }
+    .num { color: var(--orange); font-size: 30px; font-weight: 800; }
+    .card h3 { font-size: 17px; font-weight: 800; margin: 12px 0 8px; }
+    .card p { color: var(--muted); font-size: 14.5px; }
+
+    .benefit { border-radius: 16px; padding: 26px; }
+    .benefit .ic { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .benefit h3 { font-size: 18px; font-weight: 800; margin: 18px 0 8px; }
+    .benefit p { color: #4b5464; font-size: 14.5px; }
+    .industries { margin-top: 18px; background: #fff; border: 1px solid var(--card-line); border-radius: 14px; padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .industries span.chip { background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; }
+
+    .dark { background: var(--navy); color: #fff; }
+    .step { background: var(--navy-2); border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 22px; }
+    .step .dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: var(--ink); }
+    .step h3 { font-size: 17px; font-weight: 800; margin: 16px 0 8px; }
+    .step p { color: #b3bccb; font-size: 14px; }
+    .stats { margin-top: 22px; background: var(--gold); color: var(--gold-ink); border-radius: 16px; padding: 26px 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .stats b { display: block; font-size: 34px; font-weight: 800; line-height: 1.1; }
+    .stats span { font-size: 14px; font-weight: 600; }
+
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .split .card { padding: 30px; }
+    .split h3 { font-size: 22px; margin: 8px 0 14px; }
+    .list { list-style: none; display: grid; gap: 10px; }
+    .list li { display: flex; gap: 10px; font-size: 14.5px; color: #37404f; }
+    .list.check li::before { content: '✓'; color: var(--green); font-weight: 800; }
+    .list.shield li::before { content: ''; flex-shrink: 0; width: 15px; height: 17px; margin-top: 2px; background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E"); }
+
+    .faq { max-width: 760px; margin: 0 auto; }
+    .faq h2 { text-align: center; }
+    details { background: #fff; border: 1px solid var(--card-line); border-radius: 12px; margin-top: 12px; }
+    summary { cursor: pointer; padding: 16px 20px; font-weight: 700; font-size: 15px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: '+'; font-size: 20px; line-height: 1; color: var(--muted); }
+    details[open] summary::after { content: '–'; }
+    details p { padding: 0 20px 18px; color: var(--muted); font-size: 14.5px; }
+
+    .final { background: var(--navy); color: #fff; border-radius: 22px; padding: 64px 28px; text-align: center; position: relative; overflow: hidden; }
+    .final .arc { position: absolute; width: 220px; height: 220px; left: 40px; bottom: -120px; border-radius: 50%; border: 22px solid var(--gold); border-right-color: transparent; border-bottom-color: transparent; transform: rotate(-20deg); }
+    .final h2 { font-size: clamp(26px, 3.6vw, 38px); margin: 0 0 14px; position: relative; }
+    .final p { color: #c9d1de; max-width: 500px; margin: 0 auto 26px; position: relative; }
+    .final .contact { font-size: 13px; color: #c9d1de; margin: 22px 0 0; position: relative; z-index: 1; }
+    .final .arc { z-index: 0; opacity: .9; left: -30px; }
+    .final .contact a { color: var(--gold); }
+    footer { padding: 30px 0 40px; font-size: 13px; color: var(--muted); }
+
+    @media (max-width: 900px) {
+      .hero-grid, .split { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .nav-links a:not(.btn) { display: none; }
+      section { padding: 64px 0; }
+    }
+    @media (max-width: 560px) {
+      .grid-4, .stats { grid-template-columns: 1fr; }
+      .wrap { padding: 0 18px; }
+      .hero-arc { width: 220px; height: 220px; border-width: 18px; right: -40px; top: -120px; }
+      .hero-cta .btn { flex: 1; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-arc" aria-hidden="true"></div>
+    <div class="wrap">
+      <nav>
+        <a href="/landing-linkedin" aria-label="Torque Network"><img src="/logo-sm.png" alt="Torque Network" /></a>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#what">What you get</a>
+          <a href="#faq">FAQ</a>
+          <a class="btn btn-gold" href="/signup?plan=linkedin">Subscribe</a>
+        </div>
+      </nav>
+
+      <div class="hero-grid">
+        <div>
+          <span class="pill">For professionals with 6 months to 8 years of experience</span>
+          <h1>Stop posting<br />into silence.</h1>
+          <p class="lead">Torque Network is a LinkedIn growth community where early-career professionals get genuine engagement, industry-specific content ideas and steady follower growth, from peers who understand their work.</p>
+          <div class="hero-cta">
+            <a class="btn btn-gold" href="/signup?plan=linkedin">Subscribe Now</a>
+            <button class="btn btn-ghost" type="button" id="watch">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>
+              Watch the video
+            </button>
+          </div>
+          <div class="ticks">
+            <span>Peers from your own industry</span>
+            <span>Weekly topic ideas and templates</span>
+            <span>Genuine engagement, never bots</span>
+          </div>
+        </div>
+        <div>
+          <div class="video" id="video">
+            <div class="c1"></div><div class="c2"></div>
+            <button class="play" type="button" id="play" aria-label="Play the explainer video">
+              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1b1405"/></svg>
+            </button>
+            <span class="tag" id="video-tag">Explainer video · about 1:50</span>
+          </div>
+          <p class="video-cap">See how Torque Network works in under two minutes</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="wrap">
+        <div class="eyebrow" style="color: var(--orange)">Sound familiar?</div>
+        <h2>Good work deserves an audience.<br />On LinkedIn, it rarely gets one.</h2>
+        <div class="grid-3">
+          <div class="card"><div class="num">01</div><h3>You post. Nothing happens.</h3><p>An hour of writing, a couple of likes, no comments. It’s hard to keep going.</p></div>
+          <div class="card"><div class="num">02</div><h3>Senior voices get the reach</h3><p>Engagement goes to established names, while early-career professionals with real ideas stay invisible.</p></div>
+          <div class="card"><div class="num">03</div><h3>“What do I even post?”</h3><p>No ideas, no feedback and nobody from your field engaging, so most people quietly stop posting.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="what" style="padding-top: 0">
+      <div class="wrap">
+        <div class="eyebrow" style="color: var(--blue)">What you get</div>
+        <h2>A community that helps your<br />profile grow, week after week</h2>
+        <div class="grid-3">
+          <div class="benefit" style="background:#e4ecfb">
+            <div class="ic" style="background:#2f6fe0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.8-.9L3 20l1.1-4.2A8.4 8.4 0 1 1 21 11.5z"/></svg></div>
+            <h3>Genuine post engagement</h3>
+            <p>Thoughtful comments and reactions from peers in your own industry who find your post useful. Real conversations, not empty likes.</p>
+          </div>
+          <div class="benefit" style="background:#fde7dc">
+            <div class="ic" style="background:#e5582b"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg></div>
+            <h3>Industry content support</h3>
+            <p>Weekly topic ideas and post templates built for your industry, so you never stare at a blank screen again.</p>
+          </div>
+          <div class="benefit" style="background:#dff3ea">
+            <div class="ic" style="background:#14875f"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M14 7h7v7"/></svg></div>
+            <h3>Steady follower growth</h3>
+            <p>Consistent, better posts reach relevant people, so your network and credibility grow over time.</p>
+          </div>
+        </div>
+        <div class="industries">
+          Your own industry community:
+          <span class="chip">HR</span><span class="chip">Finance &amp; Banking</span><span class="chip">Sales</span><span class="chip">Marketing &amp; Creative</span><span class="chip">IT &amp; Data</span><span class="chip">and more</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="dark">
+      <div class="wrap">
+        <div class="eyebrow" style="color: var(--gold)">How it works</div>
+        <h2>A simple weekly rhythm.<br />Everyone gives, everyone grows.</h2>
+        <div class="grid-4">
+          <div class="step"><div class="dot" style="background:#f7b93e">1</div><h3>Pick a topic</h3><p>Choose from the weekly topic prompts for your industry.</p></div>
+          <div class="step"><div class="dot" style="background:#f07a43">2</div><h3>Write and publish</h3><p>Use our templates to write an original post and publish it on LinkedIn.</p></div>
+          <div class="step"><div class="dot" style="background:#5b8def">3</div><h3>Share on WhatsApp</h3><p>Send us the link and we share it with your community.</p></div>
+          <div class="step"><div class="dot" style="background:#3ccf91">4</div><h3>Engage and grow</h3><p>Comment on posts that interest you, and receive genuine engagement in return.</p></div>
+        </div>
+        <div class="stats">
+          <div><b>2</b><span>posts a week you can share</span></div>
+          <div><b>~20</b><span>posts a week you engage with, by choice</span></div>
+          <div><b>0</b><span>bots, scripts or assigned posts</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap split">
+        <div class="card">
+          <div class="eyebrow" style="color: var(--green)">Who it’s for</div>
+          <h3>Made for early-career professionals</h3>
+          <ul class="list check">
+            <li>Freshers and professionals with 6 months to 8 years of experience</li>
+            <li>Anyone who wants to post consistently but lacks ideas or reach</li>
+            <li>Professionals building a personal brand in their industry</li>
+          </ul>
+        </div>
+        <div class="card" style="background:#e4ecfb; border-color:#d3e0f8">
+          <div class="eyebrow" style="color: var(--blue)">Built the right way</div>
+          <h3>Genuine engagement that keeps your account safe</h3>
+          <ul class="list shield">
+            <li>Real comments written by real professionals</li>
+            <li>No bots, scripts or auto-comment tools, ever</li>
+            <li>No assigned posts or deadlines: you engage with what interests you</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" style="padding-top: 0">
+      <div class="wrap faq">
+        <div class="eyebrow" style="color: var(--gold); text-align: center">FAQ</div>
+        <h2>Questions, answered</h2>
+        <details><summary>What is Torque Network?</summary><p>Torque Network is a LinkedIn growth community for early-career professionals. Members share the posts they publish, peers from the same industry engage with the ones they find useful, and everyone gets weekly topic ideas and templates to keep posting consistently.</p></details>
+        <details><summary>Who can join?</summary><p>Freshers and professionals with roughly 6 months to 8 years of experience who want to post on LinkedIn consistently and grow a personal brand in their industry.</p></details>
+        <details><summary>How much time does it take each week?</summary><p>You can share up to 2 of your own posts a week, and you choose which peer posts to engage with — around 20 a week. Most members fit it into a few short sessions.</p></details>
+        <details><summary>Is it safe for my LinkedIn account?</summary><p>Yes. All engagement is written by real professionals by hand. There are no bots, scripts or auto-comment tools, and nobody is assigned posts — you only engage with what genuinely interests you.</p></details>
+        <details><summary>How much does it cost?</summary><p>Torque for LinkedIn is ₹500 per month, billed monthly. You can cancel anytime from your account.</p></details>
+      </div>
+    </section>
+
+    <section style="padding-top: 0">
+      <div class="wrap">
+        <div class="final">
+          <div class="arc" aria-hidden="true"></div>
+          <h2>Your next post deserves an audience.</h2>
+          <p>Join Torque Network and grow your LinkedIn presence with peers who understand your work.</p>
+          <a class="btn btn-gold" href="/signup?plan=linkedin" style="position: relative">Subscribe Now</a>
+          <p class="contact">Questions? WhatsApp <a href="https://wa.me/917303566443">+91 73035 66443</a> · <a href="mailto:connect@torquenetwork.in">connect@torquenetwork.in</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">© 2026 Torque Network</div>
+  </footer>
+
+  <script>
+    // Explainer video: set VIDEO_URL to a YouTube link or an .mp4 path (e.g. "/linkedin-explainer.mp4").
+    var VIDEO_URL = '';
+
+    (function () {
+      var box = document.getElementById('video');
+      function youtubeId(u) { var m = String(u).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : null; }
+      function play() {
+        if (!VIDEO_URL) {
+          document.getElementById('video-tag').textContent = 'Explainer video coming soon';
+          document.getElementById('how').scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+        var id = youtubeId(VIDEO_URL), el;
+        if (id) {
+          el = document.createElement('iframe');
+          el.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+          el.allow = 'autoplay; encrypted-media; picture-in-picture';
+          el.allowFullscreen = true;
+          el.title = 'Torque Network explainer video';
+        } else {
+          el = document.createElement('video');
+          el.src = VIDEO_URL; el.controls = true; el.autoplay = true; el.playsInline = true;
+        }
+        box.innerHTML = ''; box.appendChild(el);
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      document.getElementById('play').addEventListener('click', play);
+      document.getElementById('watch').addEventListener('click', play);
+    })();
+  </script>
+</body>
+</html>

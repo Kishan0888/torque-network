@@ -5,6 +5,10 @@
   ],
   "rewrites": [
     {
+      "source": "/landing-linkedin",
+      "destination": "/landing-linkedin.html"
+    },
+    {
       "source": "/login",
       "destination": "/account.html"
     },
