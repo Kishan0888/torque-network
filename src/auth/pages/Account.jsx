@@ -93,6 +93,11 @@ export default function Account() {
           Open member dashboard <ArrowRight size={16} />
         </button>
       )}
+      {membership?.is_admin && (
+        <button type="button" className="btn-primary" onClick={() => navigate('/admin')} style={{ width: '100%', justifyContent: 'center', marginBottom: 18, padding: '15px 22px', fontSize: 15 }}>
+          Open admin panel <ArrowRight size={16} />
+        </button>
+      )}
       <h2 id="membership-h" style={{ ...h2, fontSize: 20, margin: '4px 0 14px' }}>Your Membership</h2>
       {membershipError && <Notice tone="error">{membershipError}</Notice>}
       {!membership && !membershipError && <section style={card}><p style={muted}>Loading membership…</p></section>}

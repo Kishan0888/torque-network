@@ -2,7 +2,7 @@
  * Member dashboard (/dashboard/*). Loads the member's state once
  * (/api/dashboard?action=bootstrap) and renders the screen for the URL.
  *
- * - No active membership → sent to /account to subscribe.
+ * - No active membership → sent to /account to subscribe (admins → /admin).
  * - Membership for a platform not yet set up → setup wizard.
  * - Members with both plans switch platform with the toggle in the header.
  */
@@ -88,7 +88,7 @@ export default function DashboardApp() {
     )
   }
   if (!boot) return <div className="tn-dash"><div className="tn-main"><p className="tn-loading">Loading your dashboard…</p></div></div>
-  if (!platform) return <Redirect to="/account" />
+  if (!platform) return <Redirect to={boot.isAdmin ? '/admin' : '/account'} />
 
   const needsSetup = !boot.platforms[platform]?.onboarded_at
   if (path === '/dashboard/setup' || needsSetup) {
