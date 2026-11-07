@@ -4,7 +4,8 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../lib/api'
-import { Link } from '../lib/router'
+import { Link, navigate } from '../lib/router'
+import { supabase } from '../lib/supabase'
 import '../dashboard/dashboard.css'
 import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId } from '../../shared/memberConfig.js'
 
@@ -23,6 +24,10 @@ function useApi(path) {
 
 export default function AdminApp() {
   const [tab, setTab] = useState('leads')
+  async function signOut() {
+    await supabase.auth.signOut({ scope: 'local' })
+    navigate('/login', { replace: true })
+  }
   const probe = useApi('/api/admin?action=posts&status=pending')
   if (probe.loading && !probe.data) return <div className="tn-dash"><div className="tn-main"><p className="tn-loading">Loading admin panel…</p></div></div>
   if (probe.error) {
@@ -40,7 +45,10 @@ export default function AdminApp() {
           <img src="/logo-sm.png" alt="Torque Network" style={{ height: 48, margin: '-8px 0' }} />
           <span style={{ color: 'var(--gold)', fontWeight: 800, fontSize: 13, letterSpacing: '0.08em' }}>ADMIN</span>
         </div>
-        <Link to="/dashboard" style={{ color: '#d9dee8', fontSize: 13 }}>← Member dashboard</Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          <Link to="/dashboard" style={{ color: '#d9dee8', fontSize: 13 }}>← Member dashboard</Link>
+          <button type="button" onClick={signOut} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 8, padding: '6px 14px', color: '#d9dee8', fontSize: 13, cursor: 'pointer' }}>Log out</button>
+        </div>
       </div>
       <div style={{ background: 'var(--paper)', minHeight: 'calc(100vh - 56px)' }}><div className="tn-main" style={{ maxWidth: 1180, margin: '0 auto', background: 'transparent' }}>
         <div className="tn-pills" role="tablist">
