@@ -284,6 +284,8 @@ function GuidesAdmin() {
 
 // ── Leads (landing-page form) ─────────────────────────────────────────────
 const LEAD_STATUS = [['new', 'New'], ['contacted', 'Contacted'], ['converted', 'Converted'], ['not_interested', 'Not interested']]
+const payStage = (l) => (l.paid_at ? ['active', 'Paid'] : l.checkout_started_at ? ['pending', 'Reached payment'] : ['neutral', 'Form only'])
+
 function Leads() {
   const [status, setStatus] = useState('')
   const { data, error, reload } = useApi(`/api/admin?action=leads${status ? `&status=${status}` : ''}`)
@@ -292,9 +294,9 @@ function Leads() {
     try { await apiFetch('/api/admin?action=lead-status', { method: 'POST', body: { id: lead.id, status: next } }); reload() } catch (e) { setMsg(e.message) }
   }
   function downloadCsv() {
-    const cols = ['created_at', 'name', 'phone', 'email', 'industry', 'experience', 'profile_url', 'status', 'platform', 'page', 'utm_source', 'utm_medium', 'utm_campaign']
+    const cols = ['created_at', 'name', 'phone', 'email', 'industry', 'experience', 'profile_url', 'payment', 'paid_at', 'status', 'platform', 'page', 'utm_source', 'utm_medium', 'utm_campaign']
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
-    const csv = [cols.join(','), ...data.leads.map((l) => cols.map((c) => esc(c === 'created_at' ? new Date(l[c]).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : l[c])).join(','))].join('\n')
+    const csv = [cols.join(','), ...data.leads.map((l) => cols.map((c) => esc(c === 'payment' ? payStage(l)[1] : (c === 'created_at' || c === 'paid_at') && l[c] ? new Date(l[c]).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : l[c])).join(','))].join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }))
     a.download = `torque-leads-${new Date().toISOString().slice(0, 10)}.csv`
@@ -314,7 +316,7 @@ function Leads() {
       {(error || msg) && <div className="tn-notice error">{error || msg}</div>}
       {!data ? <p className="tn-loading">Loading…</p> : data.leads.length === 0 ? <p className="tn-small">No leads yet. They appear here as soon as someone submits the form on torquenetwork.in/landing-linkedin.</p> : (
         <div className="tn-table-wrap"><table className="tn-table">
-          <thead><tr><th>When</th><th>Name</th><th>Contact</th><th>Industry</th><th>Source</th><th>Status</th></tr></thead>
+          <thead><tr><th>When</th><th>Name</th><th>Contact</th><th>Industry</th><th>Source</th><th>Payment</th><th>Status</th></tr></thead>
           <tbody>{data.leads.map((l) => (
             <tr key={l.id}>
               <td className="tn-small" style={{ whiteSpace: 'nowrap' }}>{fmt(l.created_at)}</td>
@@ -325,6 +327,7 @@ function Leads() {
               </td>
               <td className="tn-small">{l.industry || '—'}{l.experience ? ` · ${l.experience}` : ''}</td>
               <td className="tn-small">{[l.utm_source, l.utm_campaign].filter(Boolean).join(' / ') || l.page || '—'}</td>
+              <td><span className={`tn-badge ${payStage(l)[0]}`} style={{ whiteSpace: 'nowrap' }}>{payStage(l)[1]}</span></td>
               <td>
                 <select className="tn-select" style={{ width: 'auto', padding: '6px 8px', fontSize: 12 }} value={l.status} onChange={(e) => setLeadStatus(l, e.target.value)}>
                   {LEAD_STATUS.map(([k, lab]) => <option key={k} value={k}>{lab}</option>)}

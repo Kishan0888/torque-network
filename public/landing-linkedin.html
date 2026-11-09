@@ -71,12 +71,38 @@
     .form-card .btn { width: 100%; justify-content: center; margin-top: 16px; padding: 14px; font-size: 15.5px; }
     .form-err { background: #fde8e2; color: #8f2a15; border-radius: 9px; padding: 9px 12px; font-size: 13px; margin-bottom: 12px; display: none; }
     .form-note { text-align: center; color: var(--muted); font-size: 12px; margin-top: 10px; }
-    .form-done { display: none; text-align: center; padding: 10px 4px; }
-    .form-done .ok { width: 54px; height: 54px; border-radius: 50%; background: #e3f4ec; color: var(--green); font-size: 26px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-    .form-done h2 { margin-bottom: 8px; }
-    .form-done p { color: var(--muted); font-size: 14px; margin-bottom: 4px; }
-    .form-done .btn { margin-top: 10px; }
-    .form-done .btn-wa { background: #12805a; color: #fff; }
+    .co { display: none; }
+    .co-steps { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 14px; }
+    .co-steps span { display: inline-flex; align-items: center; gap: 6px; }
+    .co-steps i { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; background: #eee7da; color: var(--muted); }
+    .co-steps .done i { background: #e3f4ec; color: var(--green); }
+    .co-steps .now { color: var(--ink); }
+    .co-steps .now i { background: var(--navy); color: #fff; }
+    .co-steps b { flex: 1; height: 1px; background: #e6dfd2; }
+    .co-order { border: 1px solid #ece4d5; background: #fcfaf5; border-radius: 14px; padding: 14px 16px; margin: 4px 0 14px; }
+    .co-prod { display: flex; gap: 12px; align-items: center; }
+    .co-logo { width: 40px; height: 40px; border-radius: 10px; background: var(--navy); color: var(--gold); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .co-prod .t1 { font-size: 11.5px; font-weight: 800; letter-spacing: .06em; color: var(--blue); text-transform: uppercase; }
+    .co-prod .t2 { font-weight: 700; font-size: 15px; }
+    .co-prod .pr { margin-left: auto; text-align: right; font-weight: 800; font-size: 16px; white-space: nowrap; }
+    .co-prod .pr small { display: block; font-weight: 500; font-size: 11.5px; color: var(--muted); }
+    .co-lines { border-top: 1px dashed #e2d9c8; margin-top: 12px; padding-top: 10px; font-size: 13.5px; }
+    .co-lines div { display: flex; justify-content: space-between; padding: 3px 0; color: var(--muted); }
+    .co-lines .tot { color: var(--ink); font-weight: 800; font-size: 15px; padding-top: 6px; }
+    .co-who { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13.5px; background: #f6f2ea; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+    .co-who strong { display: block; font-size: 14px; }
+    .co-who button { background: none; border: none; color: var(--blue); font: inherit; font-weight: 700; cursor: pointer; padding: 0; }
+    .co-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+    .co-trust { display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
+    .co-info { background: #fff6e3; color: #7a5300; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-top: 12px; display: none; }
+    .ok-box { text-align: center; }
+    .ok-box .ok { width: 58px; height: 58px; border-radius: 50%; background: #e3f4ec; color: var(--green); font-size: 28px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 4px auto 12px; }
+    .ok-box p { color: var(--muted); font-size: 14px; }
+    .receipt { border: 1px solid #ece4d5; border-radius: 12px; padding: 10px 14px; margin: 14px 0; font-size: 13.5px; text-align: left; }
+    .receipt div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+    .receipt span { color: var(--muted); }
+    .receipt b { text-align: right; word-break: break-all; }
+    .form-card .btn-line { background: #fff; color: var(--ink); border: 1px solid #d9d1c1; }
     .video-row { max-width: 760px; margin: 56px auto 0; position: relative; z-index: 1; }
 
     section { padding: 88px 0; }
@@ -183,7 +209,7 @@
           <form class="form-card" id="lead-form" novalidate>
             <div id="form-body">
               <h2>Get started with Torque</h2>
-              <p class="sub">Share your details and our team will reach out on WhatsApp within 24 hours.</p>
+              <p class="sub">Share your details to start your membership — it takes under two minutes.</p>
               <div class="form-err" id="form-err" role="alert"></div>
               <div class="f-grid">
                 <div class="f full"><label for="lf-name">Full name</label><input id="lf-name" name="name" autocomplete="name" maxlength="120" placeholder="Your full name" /></div>
@@ -206,16 +232,47 @@
                 <div class="f full"><label for="lf-profile">LinkedIn profile link <small>(optional)</small></label><input id="lf-profile" name="profile_url" inputmode="url" maxlength="300" placeholder="https://www.linkedin.com/in/your-name" /></div>
               </div>
               <div class="hp" aria-hidden="true"><label for="lf-website">Website</label><input id="lf-website" name="website" tabindex="-1" autocomplete="off" /></div>
-              <button class="btn btn-gold" type="submit" id="lf-submit">Get started →</button>
-              <p class="form-note">₹500/month after you join · No spam, ever</p>
+              <button class="btn btn-gold" type="submit" id="lf-submit">Continue to payment →</button>
+              <p class="form-note">Next: secure checkout · ₹500/month · No spam, ever</p>
             </div>
-            <div class="form-done" id="form-done" role="status">
+            <div class="co" id="co-pay">
+              <div class="co-steps" aria-label="Checkout progress"><span class="done"><i>✓</i>Details</span><b></b><span class="now"><i>2</i>Payment</span><b></b><span><i>3</i>Done</span></div>
+              <h2>Complete your membership</h2>
+              <div class="co-order">
+                <div class="co-prod">
+                  <div class="co-logo" aria-hidden="true">in</div>
+                  <div><div class="t1">Torque for LinkedIn</div><div class="t2">LinkedIn Professional</div></div>
+                  <div class="pr">₹500<small>per month</small></div>
+                </div>
+                <div class="co-lines">
+                  <div><span>Monthly membership</span><span>₹500</span></div>
+                  <div class="tot"><span>Total due today</span><span>₹500</span></div>
+                </div>
+              </div>
+              <div class="co-who"><div><strong id="co-name"></strong><span id="co-phone"></span></div><button type="button" id="co-edit">Edit</button></div>
+              <div class="form-err" id="co-err" role="alert"></div>
+              <div class="f"><label for="co-email">Email for your login &amp; receipts</label><input id="co-email" type="email" autocomplete="email" maxlength="254" placeholder="you@email.com" /></div>
+              <button class="btn btn-gold" type="button" id="co-paybtn">Pay ₹500 securely →</button>
+              <div class="co-trust"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10l-6 6z"/></svg>Secured by Razorpay · Renews monthly · Cancel anytime</div>
+              <div class="co-info" id="co-info" role="status"></div>
+            </div>
+            <div class="co ok-box" id="co-done" role="status">
+              <div class="co-steps" aria-label="Checkout progress"><span class="done"><i>✓</i>Details</span><b></b><span class="done"><i>✓</i>Payment</span><b></b><span class="now"><i>3</i>Done</span></div>
               <div class="ok">✓</div>
-              <h2>Thank you!</h2>
-              <p>Our team will reach out on WhatsApp within 24 hours.</p>
-              <p>Ready now? Join in under two minutes.</p>
-              <a class="btn btn-gold" href="/signup?plan=linkedin">Subscribe Now — ₹500/month</a>
-              <a class="btn btn-wa" href="https://wa.me/917303566443?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20Torque%20Network%20for%20LinkedIn" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
+              <h2 id="done-title">Payment successful!</h2>
+              <p id="done-sub">Welcome to Torque Network — your LinkedIn Professional membership is active.</p>
+              <div class="receipt">
+                <div><span>Membership</span><b>LinkedIn Professional</b></div>
+                <div><span>Paid</span><b>₹500 · monthly</b></div>
+                <div><span>Account</span><b id="done-email"></b></div>
+              </div>
+              <div id="done-claim" style="display:none; text-align:left">
+                <div class="form-err" id="claim-err" role="alert"></div>
+                <div class="f"><label for="claim-pw">Create a password to open your dashboard</label><input id="claim-pw" type="password" autocomplete="new-password" minlength="8" maxlength="72" placeholder="At least 8 characters" /></div>
+                <button class="btn btn-gold" type="button" id="claim-btn">Open my dashboard →</button>
+              </div>
+              <a class="btn btn-gold" id="done-login" href="/login" style="display:none">Log in to your dashboard →</a>
+              <a class="btn btn-line" href="https://wa.me/917303566443?text=Hi%2C%20I%20just%20joined%20Torque%20Network%20for%20LinkedIn" target="_blank" rel="noopener">Chat with us on WhatsApp</a>
             </div>
           </form>
         </div>
@@ -394,7 +451,7 @@
         if (!v('lf-industry')) return showError('Please choose your industry.', document.getElementById('lf-industry'));
         if (!v('lf-exp')) return showError('Please choose your experience.', document.getElementById('lf-exp'));
         err.style.display = 'none';
-        btn.disabled = true; btn.textContent = 'Sending…';
+        btn.disabled = true; btn.textContent = 'Saving…';
         fetch('/api/lead', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -405,14 +462,110 @@
         }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (res) {
             if (!res.ok) throw new Error(res.d.error || 'Something went wrong. Please try again.');
-            document.getElementById('form-body').style.display = 'none';
-            document.getElementById('form-done').style.display = 'block';
+            lead = { id: res.d.lead_id, token: res.d.token, name: v('lf-name'), phone: digits };
             if (window.fbq) window.fbq('track', 'Lead');
             if (window.gtag) window.gtag('event', 'generate_lead');
+            showPay(v('lf-email'));
           })
           .catch(function (ex) { showError(ex.message || 'Something went wrong. Please try again.'); })
-          .finally(function () { btn.disabled = false; btn.textContent = 'Get started →'; });
+          .finally(function () { btn.disabled = false; btn.textContent = 'Continue to payment →'; });
       });
+
+      // ── Checkout: lead is already saved; now pay with Razorpay on the same page
+      var lead = null;
+      var $ = function (id) { return document.getElementById(id); };
+      function post(action, body) {
+        body.lead_id = lead.id; body.token = lead.token;
+        return fetch('/api/lead?action=' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { if (!r.ok) { var e = new Error(d.error || 'Something went wrong. Please try again.'); e.code = d.code; throw e; } return d; }); });
+      }
+      function panel(id) {
+        ['form-body', 'co-pay', 'co-done'].forEach(function (p) { $(p).style.display = p === id ? 'block' : 'none'; });
+        var top = form.getBoundingClientRect().top;
+        if (top < 0 || top > window.innerHeight * 0.6) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      function coError(msg) { $('co-err').textContent = msg; $('co-err').style.display = msg ? 'block' : 'none'; }
+      var rzpLoading = null;
+      function loadRazorpay() {
+        if (window.Razorpay) return Promise.resolve();
+        if (!rzpLoading) rzpLoading = new Promise(function (ok, fail) {
+          var sc = document.createElement('script'); sc.src = 'https://checkout.razorpay.com/v1/checkout.js'; sc.async = true;
+          sc.onload = ok; sc.onerror = function () { rzpLoading = null; fail(new Error('Could not load the payment window. Check your connection and try again.')); };
+          document.body.appendChild(sc);
+        });
+        return rzpLoading;
+      }
+      function showPay(email) {
+        $('co-name').textContent = lead.name;
+        $('co-phone').textContent = '+91 ' + lead.phone.slice(0, 5) + ' ' + lead.phone.slice(5);
+        if (email) $('co-email').value = email;
+        coError(''); $('co-info').style.display = 'none';
+        panel('co-pay');
+        loadRazorpay().catch(function () {});
+        if (!$('co-email').value) setTimeout(function () { $('co-email').focus({ preventScroll: true }); }, 350);
+      }
+      $('co-edit').addEventListener('click', function () { panel('form-body'); });
+      var payBtn = $('co-paybtn');
+      function payIdle() { payBtn.disabled = false; payBtn.textContent = 'Pay ₹500 securely →'; }
+      payBtn.addEventListener('click', function () {
+        var email = $('co-email').value.trim();
+        $('co-email').classList.remove('bad');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { $('co-email').classList.add('bad'); $('co-email').focus(); return coError('Please enter a valid email address — your login and receipts go here.'); }
+        coError(''); $('co-info').style.display = 'none';
+        payBtn.disabled = true; payBtn.textContent = 'Opening secure payment…';
+        Promise.all([post('checkout', { email: email }), loadRazorpay()]).then(function (r) {
+          var co = r[0];
+          if (window.fbq) window.fbq('track', 'InitiateCheckout', { value: 500, currency: 'INR' });
+          var rzp = new window.Razorpay({
+            key: co.keyId, subscription_id: co.subscriptionId, name: 'Torque Network', description: 'LinkedIn Professional · ₹500/month',
+            image: location.origin + '/logo-sm.png', prefill: co.prefill, theme: { color: '#101a2e' },
+            handler: function (resp) {
+              payBtn.textContent = 'Confirming payment…';
+              post('verify', resp).then(function (d) { showDone(d); })
+                .catch(function (ex) { payIdle(); coError((ex.message || 'We could not confirm the payment.') + ' If money was deducted, message us on WhatsApp and we will activate you right away.'); });
+            },
+            modal: { ondismiss: function () {
+              payIdle();
+              $('co-info').textContent = 'Payment not completed. Your details are saved — tap Pay whenever you are ready.';
+              $('co-info').style.display = 'block';
+            } }
+          });
+          rzp.open();
+        }).catch(function (ex) {
+          payIdle();
+          if (ex.code === 'already_member') { coError(ex.message); $('co-info').innerHTML = '<a href="/login" style="color:inherit;font-weight:700">Log in to your dashboard →</a>'; $('co-info').style.display = 'block'; return; }
+          coError(ex.message);
+        });
+      });
+      function showDone(d) {
+        $('done-email').textContent = d.email || '';
+        if (!d.entitled) {
+          $('done-title').textContent = 'Payment received!';
+          $('done-sub').textContent = 'We are activating your membership — this usually takes a minute. Log in to see it.';
+        }
+        if (d.account === 'set_password') { $('done-claim').style.display = 'block'; $('done-login').style.display = 'none'; }
+        else { $('done-claim').style.display = 'none'; $('done-login').style.display = 'flex'; $('done-login').href = '/login'; }
+        panel('co-done');
+        if (window.fbq) window.fbq('track', 'Purchase', { value: 500, currency: 'INR' });
+        if (window.gtag) window.gtag('event', 'purchase', { value: 500, currency: 'INR' });
+      }
+      $('claim-btn').addEventListener('click', function () {
+        var pw = $('claim-pw').value, b = $('claim-btn'), e2 = $('claim-err');
+        e2.style.display = 'none';
+        if (pw.length < 8) { e2.textContent = 'Use at least 8 characters.'; e2.style.display = 'block'; $('claim-pw').focus(); return; }
+        b.disabled = true; b.textContent = 'Setting up your account…';
+        post('claim', { password: pw }).then(function (d) {
+          var s = d.session;
+          if (s) location.href = '/dashboard#access_token=' + encodeURIComponent(s.access_token) + '&refresh_token=' + encodeURIComponent(s.refresh_token) +
+            '&expires_in=' + s.expires_in + '&expires_at=' + s.expires_at + '&token_type=bearer&type=signup';
+          else location.href = '/login';
+        }).catch(function (ex) {
+          b.disabled = false; b.textContent = 'Open my dashboard →';
+          if (ex.code === 'use_login') { $('done-claim').style.display = 'none'; $('done-login').style.display = 'flex'; return; }
+          e2.textContent = ex.message; e2.style.display = 'block';
+        });
+      });
+      $('claim-pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('claim-btn').click(); });
       document.getElementById('watch').addEventListener('click', play);
     })();
   </script>
