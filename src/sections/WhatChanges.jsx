@@ -235,23 +235,37 @@ export default function Problem() {
           }}
         >
           <img
+            className="wc-desktop"
             src="/1.png"
-            alt="Creator Problem vs Solution"
+            alt="The problem: posting alone, only 3–7% of followers see a post. The solution: a creator network that amplifies your content."
             style={{
               width: "100%",
               display: "block",
             }}
           />
+          {/* Mobile: the two halves stacked — problem first, then solution */}
+          <div className="wc-mobile">
+            <img src="/problem-mobile.jpg" alt="The problem: the algorithm isn't broken, you're just fighting it alone." loading="lazy" width="880" height="872" />
+            <div className="wc-arrow" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            </div>
+            <img src="/solution-mobile.jpg" alt="The solution: a creator network that amplifies your content." loading="lazy" width="786" height="872" />
+          </div>
         </motion.div>
       </div>
 
       <style>{`
+        .wc-mobile{ display:none; }
         @media(max-width:768px){
-
-          #creators img{
-            content:url("/1.png");
+          .wc-desktop{ display:none !important; }
+          .wc-mobile{ display:flex; flex-direction:column; align-items:center; }
+          .wc-mobile img{ width:100%; height:auto; display:block; }
+          .wc-arrow{
+            width:44px; height:44px; border-radius:50%; margin:-22px 0; z-index:2; position:relative;
+            background:#0D1326; border:1px solid rgba(34,197,94,.45);
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 0 20px rgba(34,197,94,.25);
           }
-
         }
 
         @media(max-width:480px){
