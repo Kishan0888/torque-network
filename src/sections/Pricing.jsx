@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useInView } from '../hooks/useInView'
-import { Check, ArrowRight, Sparkles, Briefcase } from 'lucide-react'
+import { Check, ArrowRight } from 'lucide-react'
+import { InstagramGlyph, LinkedInGlyph } from '../components/BrandGlyphs'
 
 // Public pricing never opens Razorpay directly: visitors create an account
 // first, then pay on /account (each plan has its own checkout). The selected
@@ -14,7 +15,7 @@ const PLANS = [
     eyebrow: 'Torque for Instagram',
     name: 'Standard Member',
     price: '₹750',
-    Icon: Sparkles,
+    Icon: InstagramGlyph,
     benefits: [
       '500–2,500 real creators watch, save and share your post',
       'Engagement within 48 hours, staggered naturally',
@@ -28,12 +29,13 @@ const PLANS = [
     eyebrow: 'Torque for LinkedIn',
     name: 'LinkedIn Professional',
     price: '₹500',
-    Icon: Briefcase,
-    // Same wording as the LinkedIn card on the account page (src/auth/pages/Account.jsx).
+    Icon: LinkedInGlyph,
     benefits: [
-      'Share your LinkedIn posts with the Torque Network community',
-      'Genuine engagement from fellow members on your posts',
-      'A professionally managed network for LinkedIn professionals',
+      'Genuine reactions, comments and reposts from verified members',
+      'Peers matched to your industry, across 9 industries',
+      'Submit up to 2 LinkedIn posts a week to the network',
+      'A monthly content guide with topics for your domain',
+      'Private WhatsApp community and learning videos',
     ],
   },
 ]

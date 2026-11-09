@@ -108,7 +108,7 @@ export default function DifferentCreators() {
               marginBottom: 16,
             }}
           >
-            CREATE • SUPPORT • GROW
+            TORQUE FOR INSTAGRAM • CREATE • SUPPORT • GROW
           </div>
 
           <h2

@@ -4,9 +4,11 @@ import { useInView } from '../hooks/useInView'
 import { ArrowRight, Check, ChevronRight, Loader } from 'lucide-react'
 import { submitCreatorApplication } from '../hooks/useWeb3Forms'
 import { saveLeadToSheet } from '../hooks/useSheetLeads'
+import { DOMAINS, EXPERIENCE } from '../../shared/memberConfig.js'
+import { InstagramGlyph, LinkedInGlyph } from '../components/BrandGlyphs'
 
 /* ── Multi-step application form ─────────────── */
-const STEPS = [
+const IG_STEPS = [
   {
     label:'Your Details', fields:[
       { id:'name',      label:'Full Name',         type:'text',  placeholder:'Your full name',     required:true },
@@ -30,8 +32,68 @@ const STEPS = [
   },
 ]
 
+// LinkedIn applications go to /api/lead (Supabase → /admin → Leads), not the
+// Instagram sheet, whose automatic emails are written for Instagram creators.
+const LI_STEPS = [
+  {
+    label:'Your Details', fields:[
+      { id:'name',        label:'Full Name',              type:'text',  placeholder:'Your full name',  required:true },
+      { id:'profile_url', label:'LinkedIn Profile Link',  type:'url',   placeholder:'https://www.linkedin.com/in/your-name', required:false },
+      { id:'industry',    label:'Industry',               type:'select',options:[...Object.keys(DOMAINS.linkedin),'Other'], required:true },
+      { id:'experience',  label:'Experience',             type:'select',options:EXPERIENCE, required:true },
+      { id:'email',       label:'Email',                  type:'email', placeholder:'you@email.com',   required:true },
+      { id:'phone',       label:'Phone / WhatsApp',       type:'tel',   placeholder:'+91 98765 43210', required:true },
+    ],
+  },
+  {
+    label:'Membership', fields:[
+      { id:'tier', label:'Membership', type:'select', options:['LinkedIn Professional (₹500/month)'], required:true },
+    ],
+    goals:[
+      'React to and comment thoughtfully on posts from my industry community',
+      'Engage genuinely — no automation or copy-paste comments',
+      'Submit my best LinkedIn posts to the network',
+      'Help build a community that grows back',
+    ],
+    goalsLabel:'I understand and agree to:',
+  },
+]
+const STEPS_BY = { instagram: IG_STEPS, linkedin: LI_STEPS }
+
 const emptyForm = {
   name:'',instagram:'',followers:'',email:'',phone:'',tier:'',goals:[],consent:false,
+  profile_url:'',industry:'',experience:'',
+}
+
+async function submitLinkedInApplication(form) {
+  const q = new URLSearchParams(window.location.search)
+  const r = await fetch('/api/lead', {
+    method:'POST', headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      platform:'linkedin', page:'home', name:form.name, phone:form.phone, email:form.email,
+      industry:form.industry, experience:form.experience, profile_url:form.profile_url,
+      utm_source:q.get('utm_source'), utm_medium:q.get('utm_medium'), utm_campaign:q.get('utm_campaign'),
+    }),
+  })
+  const d = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.')
+}
+
+function PlatformPicker({ platform, onPick }) {
+  return (
+    <div role="tablist" aria-label="Platform" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,padding:5,borderRadius:16,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',marginBottom:28}}>
+      {[['instagram','Instagram',InstagramGlyph,'linear-gradient(135deg,#F58529,#DD2A7B 55%,#8134AF)'],['linkedin','LinkedIn',LinkedInGlyph,'linear-gradient(135deg,#0A66C2,#2D8CFF)']].map(([k,label,Glyph,bg])=>{
+        const on = platform===k
+        return (
+          <button key={k} type="button" role="tab" aria-selected={on} onClick={()=>onPick(k)}
+            style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'11px 12px',borderRadius:12,border:'none',cursor:'pointer',
+              background:on?bg:'transparent',color:on?'#fff':'#64748B',fontWeight:700,fontSize:14,fontFamily:'inherit',transition:'color .2s'}}>
+            <Glyph size={15}/> {label}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function StepIndicator({ current, total }) {
@@ -77,7 +139,7 @@ function FormField({ field, value, onChange }) {
   )
 }
 
-function SuccessAnimation() {
+function SuccessAnimation({ platform = 'instagram' }) {
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}} style={{textAlign:'center',padding:'40px 20px'}}>
       {/* Holographic checkmark */}
@@ -126,8 +188,16 @@ function SuccessAnimation() {
       </motion.h3>
       <motion.p initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:0.75}}
         style={{fontSize:15,color:'#64748B',lineHeight:1.65,maxWidth:340,margin:'0 auto'}}>
-        We'll review your profile and get back to you within 48 hours. Welcome to Torque Network.
+        {platform==='linkedin'
+          ? "We'll reach out on WhatsApp within 24 hours. Want to start right away? Your membership is one step away."
+          : "We'll review your profile and get back to you within 48 hours. Welcome to Torque Network."}
       </motion.p>
+      {platform==='linkedin'&&(
+        <motion.a href="/signup?plan=linkedin" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.9}}
+          style={{display:'inline-flex',alignItems:'center',gap:8,marginTop:22,padding:'14px 24px',borderRadius:14,background:'linear-gradient(135deg,#0A66C2,#2D8CFF)',color:'#fff',fontWeight:700,fontSize:15,textDecoration:'none'}}>
+          Start membership — ₹500/month <ArrowRight size={16}/>
+        </motion.a>
+      )}
     </motion.div>
   )
 }
@@ -135,6 +205,9 @@ function SuccessAnimation() {
 export default function Community() {
   const [ref, inView] = useInView()
   const [step, setStep] = useState(0)
+  const [platform, setPlatform] = useState('instagram')
+  const STEPS = STEPS_BY[platform]
+  const pickPlatform = (k) => { setPlatform(k); setStep(0); setForm(f=>({...f,tier:'',goals:[],consent:false})) }
   const [form, setForm] = useState(emptyForm)
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading]     = useState(false)
@@ -151,16 +224,20 @@ export default function Community() {
   const handleNext = async (e) => {
     e?.preventDefault()
     if (step < STEPS.length - 1) { setStep(s => s + 1); return }
-    // Final step — submit to Web3Forms
+    // Final step — Instagram: Web3Forms + sheet; LinkedIn: /api/lead
     setLoading(true)
-    saveLeadToSheet(form)
     try {
-      await submitCreatorApplication(form)
+      if (platform==='linkedin') {
+        await submitLinkedInApplication(form)
+      } else {
+        saveLeadToSheet(form)
+        await submitCreatorApplication(form)
+      }
       setSubmitted(true)
       setForm(emptyForm)
       setStep(0)
     } catch (err) {
-      showToast('Something went wrong. Please try again.')
+      showToast(platform==='linkedin' && err?.message ? err.message : 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -186,7 +263,7 @@ export default function Community() {
             Register to Join<br/><span className="gradient-text">Torque Network.</span>
           </h2>
           <p style={{fontSize:17,color:'#64748B',maxWidth:520,margin:'18px auto 0',lineHeight:1.72}}>
-            Tell us about yourself and the Torque Network team will get in touch to help you get started.
+            Instagram creator or LinkedIn professional? Tell us about yourself and the Torque Network team will get in touch to help you get started.
           </p>
         </motion.div>
 
@@ -199,7 +276,7 @@ export default function Community() {
             <h3 style={{fontSize:24,fontWeight:700,marginBottom:20,fontFamily:'Space Grotesk'}}>Why apply now?</h3>
             {[
               {emoji:'🔒',title:'Early Access',desc:'Shape the product roadmap and community culture from day one.'},
-              {emoji:'🤝',title:'Real Community',desc:'Connect with vetted creators who are serious about their craft.'},
+              {emoji:'🤝',title:'Real Community',desc:'Connect with vetted creators and professionals who are serious about their craft.'},
               {emoji:'📈',title:'Collaborative Growth',desc:'Grow alongside a community that actively supports your content.'},
             ].map((item,i)=>(
               <motion.div key={item.title}
@@ -238,8 +315,9 @@ export default function Community() {
           >
             <div className="animated-border" style={{borderRadius:28,position:'relative'}}>
               <div style={{background:'#0D1326',borderRadius:27,padding:'36px 36px'}} className="form-inner-pad">
-                {submitted ? <SuccessAnimation/> : (
+                {submitted ? <SuccessAnimation platform={platform}/> : (
                   <>
+                    <PlatformPicker platform={platform} onPick={pickPlatform}/>
                     <StepIndicator current={step} total={STEPS.length}/>
 
                     <div style={{marginBottom:24}}>
@@ -251,7 +329,7 @@ export default function Community() {
 
                     <form onSubmit={handleNext}>
                       <AnimatePresence mode="wait">
-                        <motion.div key={step}
+                        <motion.div key={`${platform}-${step}`}
                           initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}}
                           transition={{duration:0.28}}
                         >

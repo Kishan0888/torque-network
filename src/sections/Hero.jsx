@@ -201,10 +201,11 @@
 //     </section>
 //   )
 // }
-import { Suspense, lazy, useState, useRef } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Suspense, lazy, useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Sparkles, Volume2, VolumeX, Briefcase, ThumbsUp, MessageSquare, Repeat2 } from "lucide-react";
 import heroVideo from "../assets/video.mp4";
+import { InstagramGlyph, LinkedInGlyph } from "../components/BrandGlyphs";
 
 const NetworkScene = lazy(() => import("../components/NetworkScene"));
 
@@ -214,9 +215,103 @@ const fadeUp = (d = 0) => ({
   transition: { duration: 0.85, delay: d, ease: [0.23, 1, 0.32, 1] },
 });
 
+const IG_GRAD = "linear-gradient(135deg,#F58529,#DD2A7B 55%,#8134AF)";
+const LI_BLUE = "#0A66C2";
+
+// Copy for each platform. The hero gently alternates until the visitor picks one.
+const PLATFORM_COPY = {
+  instagram: {
+    tab: "Instagram creators",
+    body: "Torque for Instagram is a private, structured amplification network for creators of every kind. Between 500 and 2,500 real creators watch, save and share every post you publish within 48 hours, so new audiences discover you and your reach grows beyond your followers.",
+    cta: "Join Torque for Instagram",
+    href: "/signup?plan=instagram",
+    ghost: { label: "See How It Works", href: "#how-it-works" },
+    people: "Creators across every niche",
+    price: "₹750/month · Cancel anytime",
+  },
+  linkedin: {
+    tab: "LinkedIn professionals",
+    body: "Torque for LinkedIn is a professional growth community. Share your posts with verified peers from your own industry who react, comment thoughtfully and repost, so your expertise reaches the right people well beyond your connections.",
+    cta: "Join Torque for LinkedIn",
+    href: "/signup?plan=linkedin",
+    ghost: { label: "Explore LinkedIn", href: "#linkedin" },
+    people: "Professionals across 9 industries",
+    price: "₹500/month · Cancel anytime",
+  },
+};
+
+function PlatformSwitch({ platform, onPick }) {
+  return (
+    <div role="tablist" aria-label="Choose your platform" className="hero-switch"
+      style={{ display: "inline-flex", padding: 5, gap: 4, borderRadius: 999, background: "rgba(13,19,38,.75)", border: "1px solid rgba(255,255,255,.09)", marginBottom: 22 }}>
+      {["instagram", "linkedin"].map((k) => {
+        const on = platform === k;
+        return (
+          <button key={k} role="tab" aria-selected={on} onClick={() => onPick(k)} type="button"
+            style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 999, border: "none", background: "transparent", color: on ? "#fff" : "#94A3B8", fontSize: 13.5, fontWeight: 650, cursor: "pointer", fontFamily: "inherit" }}>
+            {on && <motion.span layoutId="hero-switch-pill" transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              style={{ position: "absolute", inset: 0, borderRadius: 999, background: k === "instagram" ? IG_GRAD : LI_BLUE, boxShadow: k === "instagram" ? "0 6px 22px rgba(221,42,123,.35)" : "0 6px 22px rgba(10,102,194,.45)" }} />}
+            <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 8 }}>
+              {k === "instagram" ? <InstagramGlyph size={15} /> : <LinkedInGlyph size={15} />}
+              <span className="hs-long">{PLATFORM_COPY[k].tab}</span>
+              <span className="hs-short">{k === "instagram" ? "Instagram" : "LinkedIn"}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** LinkedIn post mock shown in place of the reel when LinkedIn is selected. */
+function LinkedInPostMock() {
+  return (
+    <div style={{ borderRadius: 22, background: "rgba(13,19,38,.92)", border: "1px solid rgba(10,102,194,.35)", boxShadow: "0 0 40px rgba(10,102,194,.25)", padding: 18, color: "#E2E8F0", textAlign: "left" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#0A66C2,#22D3EE)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: 14 }}>RM</div>
+        <div style={{ lineHeight: 1.25 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#F8FAFC" }}>Rohan Mehta</div>
+          <div style={{ fontSize: 11, color: "#94A3B8" }}>Product Manager · Fintech</div>
+        </div>
+        <div style={{ marginLeft: "auto", width: 22, height: 22, borderRadius: 5, background: LI_BLUE, display: "flex", alignItems: "center", justifyContent: "center" }}><LinkedInGlyph size={13} color="#fff" /></div>
+      </div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "#CBD5E1", marginBottom: 12 }}>
+        3 things I wish I knew before my first product launch 🚀<br />
+        <span style={{ color: "#64748B" }}>1. Talk to users before you write the spec…</span>
+      </div>
+      <div style={{ height: 78, borderRadius: 12, background: "linear-gradient(135deg,rgba(10,102,194,.35),rgba(34,211,238,.15))", border: "1px solid rgba(255,255,255,.06)", marginBottom: 12, display: "flex", alignItems: "flex-end", gap: 6, padding: "0 14px 12px" }}>
+        {[38, 52, 46, 64, 58].map((h, i) => (
+          <motion.div key={i} initial={{ height: 6 }} animate={{ height: h }} transition={{ duration: 0.9, delay: 0.15 + i * 0.08, ease: [0.23, 1, 0.32, 1] }}
+            style={{ flex: 1, borderRadius: 4, background: i === 4 ? "#22D3EE" : "rgba(255,255,255,.22)" }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11, color: "#94A3B8", paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,.07)" }}>
+        <span>👍❤️💡 Rising with your peers</span><span>Comments · Reposts</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-around", paddingTop: 10, fontSize: 11.5, color: "#94A3B8" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#60A5FA" }}><ThumbsUp size={13} />Like</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><MessageSquare size={13} />Comment</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Repeat2 size={13} />Repost</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Hero() {
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
+  const [platform, setPlatform] = useState("instagram");
+  const [picked, setPicked] = useState(false);
+  const copy = PLATFORM_COPY[platform];
+  const isLi = platform === "linkedin";
+
+  // Alternate between the two platforms until the visitor chooses one.
+  useEffect(() => {
+    if (picked) return;
+    const t = setInterval(() => setPlatform((p) => (p === "instagram" ? "linkedin" : "instagram")), 6500);
+    return () => clearInterval(t);
+  }, [picked]);
+  const pick = (k) => { setPicked(true); setPlatform(k); };
 
   const toggleSound = async () => {
     if (!videoRef.current) return;
@@ -331,7 +426,7 @@ export default function Hero() {
                     letterSpacing: "0.01em",
                   }}
                 >
-                  A structured amplification network for Instagram creators
+                  For Instagram creators & LinkedIn professionals
                 </span>
               </span>
             </motion.div>
@@ -347,29 +442,27 @@ export default function Hero() {
     maxWidth: 620,
   }}
 >
-  Only 3–7% of Your Followers See Your Posts.
+  Most of Your Audience Never Sees Your Posts.
   <br />
   <span className="gradient-text">
     Torque Network Changes That.
   </span>
 </motion.h1>
 
-            <motion.p
-              {...fadeUp(0.34)}
-              style={{
-                fontSize: 16,
-                color: "#94A3B8",
-                lineHeight: 1.6,
-                maxWidth: 500,
-                marginBottom: 10,
-              }}
-            >
-              Torque Network is a private, structured amplification network for
-              Instagram creators of every kind. Between 500 and 2,500 real
-              creators watch, save and share every post you publish within 48
-              hours, so new audiences discover you and your reach grows beyond
-              your followers.
-            </motion.p>
+            <motion.div {...fadeUp(0.3)}>
+              <PlatformSwitch platform={platform} onPick={pick} />
+            </motion.div>
+
+            <div className="hero-body" style={{ maxWidth: 520, marginBottom: 10 }}>
+              <AnimatePresence mode="wait">
+                <motion.p key={platform}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.35 }}
+                  style={{ fontSize: 16, color: "#94A3B8", lineHeight: 1.6, margin: 0 }}>
+                  {copy.body}
+                </motion.p>
+              </AnimatePresence>
+            </div>
 
             <motion.p
               {...fadeUp(0.4)}
@@ -396,7 +489,7 @@ export default function Hero() {
               }}
             >
               <motion.a
-                href="#pricing"
+                href={copy.href}
                 whileHover={{
                   scale: 1.05,
                   boxShadow: "0 0 35px rgba(245,158,11,.55)",
@@ -424,19 +517,19 @@ export default function Hero() {
                     "0 0 0 1px rgba(255,255,255,.05) inset,0 10px 28px rgba(245,158,11,.35)",
                 }}
               >
-                Join Torque Network
+                {copy.cta}
                 <ArrowRight size={18} />
               </motion.a>
 
               <a
-                href="#brands"
+                href={copy.ghost.href}
                 className="btn-ghost"
                 style={{
                   fontSize: 15,
                   padding: "16px 28px",
                 }}
               >
-                See How It Works
+                {copy.ghost.label}
               </a>
             </motion.div>
 
@@ -485,7 +578,7 @@ export default function Hero() {
                     color: "#F8FAFC",
                   }}
                 >
-                  Creators across every niche
+                  {copy.people}
                 </div>
                 <div
                   style={{
@@ -494,7 +587,7 @@ export default function Hero() {
                     marginTop: 2,
                   }}
                 >
-                  ₹750/month · Cancel anytime
+                  {copy.price}
                 </div>
               </div>
             </motion.div>
@@ -553,6 +646,7 @@ export default function Hero() {
               }}
               whileHover={{ scale: 1.04, rotate: 4 }}
               className="hero-phone"
+              aria-hidden={isLi}
               style={{
                 position: "absolute",
                 top: 0,
@@ -567,6 +661,7 @@ export default function Hero() {
                 boxShadow:
                   "0 0 35px rgba(59,130,246,.28),0 0 80px rgba(34,211,238,.12)",
                 overflow: "hidden",
+                visibility: isLi ? "hidden" : "visible",
               }}
             >
               <div
@@ -667,10 +762,26 @@ export default function Hero() {
               </div>
             </motion.div>
 
+            <AnimatePresence>
+              {isLi && (
+                <motion.div key="li-post" className="hero-li-post"
+                  initial={{ opacity: 0, y: 24, rotate: 4 }} animate={{ opacity: 1, y: 0, rotate: 3 }} exit={{ opacity: 0, y: 16 }}
+                  transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
+                  style={{ position: "absolute", top: 10, right: 40, width: "clamp(250px,27vw,320px)", zIndex: 11 }}>
+                  <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: LI_BLUE, color: "#fff", fontSize: 10, fontWeight: 700, padding: "4px 10px", borderRadius: 999, zIndex: 3, whiteSpace: "nowrap" }}>
+                    TORQUE FOR LINKEDIN
+                  </div>
+                  <LinkedInPostMock />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Floating Cards */}
             <div
               className="float-a"
               style={{
+                opacity: isLi ? 0 : 1,
+                transition: "opacity .4s",
                 position: "absolute",
                 top: 45,
                 right: 0,
@@ -696,7 +807,7 @@ export default function Hero() {
                     width: 30,
                     height: 30,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg,#EC4899,#8B5CF6)",
+                    background: isLi ? "linear-gradient(135deg,#0A66C2,#22D3EE)" : "linear-gradient(135deg,#EC4899,#8B5CF6)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -705,7 +816,7 @@ export default function Hero() {
                     color: "#fff",
                   }}
                 >
-                  A
+                  {isLi ? "P" : "A"}
                 </div>
                 <span
                   style={{
@@ -714,7 +825,7 @@ export default function Hero() {
                     color: "#F8FAFC",
                   }}
                 >
-                  @aanya.creates
+                  {isLi ? "Priya S. · HR Lead" : "@aanya.creates"}
                 </span>
               </div>
 
@@ -725,7 +836,7 @@ export default function Hero() {
                   marginBottom: 7,
                 }}
               >
-                ↑ 847 engagements · 48 hrs
+                {isLi ? "↑ Comments from industry peers" : "↑ 847 engagements · 48 hrs"}
               </div>
 
               <div
@@ -770,7 +881,7 @@ export default function Hero() {
                   marginBottom: 6,
                 }}
               >
-                <Sparkles size={14} color="#F59E0B" />
+                {isLi ? <Briefcase size={14} color="#60A5FA" /> : <Sparkles size={14} color="#F59E0B" />}
                 <span
                   style={{
                     fontSize: 11,
@@ -778,7 +889,7 @@ export default function Hero() {
                     fontWeight: 500,
                   }}
                 >
-                  Creator Network
+                  {isLi ? "Professional Network" : "Creator Network"}
                 </span>
               </div>
 
@@ -789,7 +900,7 @@ export default function Hero() {
                   color: "#F8FAFC",
                 }}
               >
-                Finance Niche
+                {isLi ? "IT & Software" : "Finance Niche"}
               </div>
 
               <div
@@ -811,7 +922,7 @@ export default function Hero() {
                     display: "inline-block",
                   }}
                 />
-                512 creators active
+                {isLi ? "Peers in your industry" : "512 creators active"}
               </div>
             </div>
 
@@ -846,7 +957,7 @@ export default function Hero() {
                   color: "#F8FAFC",
                 }}
               >
-                1,000 creators
+                {isLi ? "Verified professionals" : "1,000 creators"}
               </div>
               <div
                 style={{
@@ -902,6 +1013,9 @@ export default function Hero() {
       </div>
 
       <style>{`
+        .hero-body{ min-height:130px; }
+        .hs-short{ display:none; }
+        @media (max-width:520px){ .hs-long{ display:none; } .hs-short{ display:inline; } .hero-switch{ margin-left:auto; margin-right:auto; } }
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
@@ -917,6 +1031,16 @@ export default function Hero() {
           .hero-3d{
             height:320px !important;
           }
+
+          .hero-body{ min-height:210px; }
+
+          .hero-li-post{
+            width:250px !important;
+            right:8px !important;
+            top:0 !important;
+          }
+
+          .hero-body{ margin-left:auto; margin-right:auto; }
 
           .hero-phone{
             width:155px !important;

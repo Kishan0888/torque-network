@@ -33,7 +33,7 @@ export default function Footer() {
               />
             </div>
             <p style={{fontSize:13,color:'#475569',lineHeight:1.68,marginBottom:8,maxWidth:210}}>
-              Amplification Network for Instagram Creators
+              Amplification Network for Instagram Creators & LinkedIn Professionals
             </p>
             <p style={{fontSize:11,color:'#334155',lineHeight:1.6,marginBottom:24,maxWidth:210,fontStyle:'italic'}}>
               Instagram ₹750/month · LinkedIn ₹500/month · Cancel anytime.
@@ -68,7 +68,7 @@ export default function Footer() {
         </div>
         <div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:28}}/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16}}>
-          <p style={{fontSize:12,color:'#2D3748'}}>© 2024 Torque Network · Amplification Network for Instagram Creators</p>
+          <p style={{fontSize:12,color:'#2D3748'}}>© 2026 Torque Network · Instagram Creators & LinkedIn Professionals</p>
           <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
             {['Privacy Policy','Terms of Service','Creator Agreement'].map(l=>(
               <a key={l} href="#" style={{fontSize:12,color:'#2D3748',textDecoration:'none',transition:'color 0.2s'}}

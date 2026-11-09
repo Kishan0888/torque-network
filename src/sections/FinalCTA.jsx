@@ -63,14 +63,14 @@ export default function FinalCTA() {
           </h2>
 
           <p style={{ fontSize:18, color:'#64748B', maxWidth:560, margin:'0 auto 18px', lineHeight:1.72 }}>
-            Join Torque Network. Between 500 and 2,500 real creators will watch, save and share every post you publish — within 48 hours.
+            Join Torque Network on Instagram, LinkedIn or both. Real members engage with every post you share, so each one starts with momentum instead of silence.
           </p>
           <p style={{ fontSize:14, color:'#F59E0B', maxWidth:460, margin:'0 auto 52px', lineHeight:1.65, fontWeight:600 }}>
-            Standard Member · ₹750 per month · Billed monthly · Cancel anytime.
+            Billed monthly · Cancel anytime · Join one or both
           </p>
 
           <div style={{ display:'flex', flexWrap:'wrap', gap:16, justifyContent:'center', marginBottom:48 }}>
-            <motion.a href="/signup"
+            <motion.a href="/signup?plan=instagram"
               style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:16, padding:'18px 38px', borderRadius:16,
                 background:'linear-gradient(135deg,#D97706,#F59E0B)', color:'#fff', fontWeight:700, textDecoration:'none',
                 boxShadow:'0 0 30px rgba(245,158,11,0.4)' }}
@@ -78,11 +78,15 @@ export default function FinalCTA() {
               whileTap={{ scale:0.97 }}
               animate={{ boxShadow:['0 0 20px rgba(245,158,11,0.3)','0 0 55px rgba(245,158,11,0.55)','0 0 20px rgba(245,158,11,0.3)'] }}
               transition={{ duration:3, repeat:Infinity }}>
-              Subscribe — ₹750/month <ArrowRight size={18}/>
+              Instagram — ₹750/month <ArrowRight size={18}/>
             </motion.a>
-            <a href="#how-it-works" className="btn-ghost" style={{ fontSize:16, padding:'18px 36px', borderRadius:16, textDecoration:'none' }}>
-              See How It Works
-            </a>
+            <motion.a href="/signup?plan=linkedin"
+              whileHover={{ scale:1.05 }} whileTap={{ scale:0.97 }}
+              style={{ display:'inline-flex', alignItems:'center', gap:8, fontSize:16, padding:'18px 38px', borderRadius:16,
+                background:'linear-gradient(135deg,#0A66C2,#2D8CFF)', color:'#fff', fontWeight:700, textDecoration:'none',
+                boxShadow:'0 0 30px rgba(10,102,194,0.45)' }}>
+              LinkedIn — ₹500/month <ArrowRight size={18}/>
+            </motion.a>
           </div>
 
           <motion.div initial={{opacity:0,y:16}} animate={inView?{opacity:1,y:0}:{}} transition={{delay:0.6}}
@@ -99,7 +103,7 @@ export default function FinalCTA() {
           </motion.div>
 
           <p style={{ fontSize:11, color:'#2D3748', marginTop:28 }}>
-            Amplification Network for Instagram Creators · ₹750/month · Cancel anytime
+            Amplification Network for Instagram Creators & LinkedIn Professionals · Cancel anytime
           </p>
         </motion.div>
       </div>

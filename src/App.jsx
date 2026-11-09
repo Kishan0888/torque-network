@@ -24,6 +24,8 @@ import ForBrands        from './sections/ForBrands'
 import Community        from './sections/Community'
 import FAQ              from './sections/FAQ'
 import FinalCTA         from './sections/FinalCTA'
+import Platforms        from './sections/Platforms'
+import LinkedInShowcase from './sections/LinkedInShowcase'
 
 function D() {
   return (
@@ -54,6 +56,8 @@ export default function App() {
       <main>
         {/* 1 */}
         <Hero />
+        <Platforms />
+        <D/>
         <WhatChanges />
         <D/>
         {/* 5 — What Is Torque */}
@@ -82,6 +86,9 @@ export default function App() {
         <D/> */}
         
         <DifferentCreators />
+        <D/>
+        <LinkedInShowcase />
+        <D/>
         
         
         {/* 8 — Creator Timeline */}

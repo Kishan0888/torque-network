@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
 
 const NAV = [
-  { label: 'The Problem', href: '#creators' },
+  { label: 'Platforms', href: '#platforms' },
   { label: 'What is Torque?', href: '#what-is-torque' },
   { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Benefits', href: '#benefits' },
+  { label: 'LinkedIn', href: '#linkedin' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]
