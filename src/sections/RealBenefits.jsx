@@ -1,7 +1,9 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { BarChart3, Globe2, UserPlus } from "lucide-react";
+import { BarChart3, Globe2, UserPlus, Eye, BadgeCheck, Handshake } from "lucide-react";
 import { useInView } from "../hooks/useInView";
+import { usePlatform } from "../context/PlatformContext";
+import { LiPost } from "./linkedin/LiParts";
 
 const BENEFITS = [
   {
@@ -24,7 +26,35 @@ const BENEFITS = [
   },
 ];
 
+const LI_BENEFITS = [
+  { icon: Eye, title: "Visible Expertise", desc: "Seen beyond your connections", color: "#93C5FD" },
+  { icon: BadgeCheck, title: "Stronger Credibility", desc: "Trust signals on your profile", color: "#7DD3FC" },
+  { icon: Handshake, title: "A Growing Network", desc: "Referrals and opportunities", color: "#86EFAC" },
+];
+
+/** LinkedIn background: no photo, a calm "feed" of post cards drifting on the right. */
+function LiBackdrop() {
+  return (
+    <div aria-hidden="true" style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden",
+      background: "radial-gradient(circle at 78% 40%, rgba(10,102,194,.45), transparent 55%), radial-gradient(circle at 95% 90%, rgba(34,211,238,.18), transparent 40%), linear-gradient(120deg,#050A18,#071a33 60%,#0a2a52)" }}>
+      <div className="rb-li-feed" style={{ position: "absolute", right: "4%", top: "8%", width: "38%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, opacity: .9, transform: "rotate(-6deg)" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <motion.div key={i} animate={{ y: [0, i % 2 ? 10 : -10, 0] }} transition={{ duration: 6 + i, repeat: Infinity, ease: "easeInOut" }} style={{ marginTop: i % 2 ? 60 : 0 }}>
+            <LiPost width="100%" name={["Ananya Rao", "Rohan Mehta", "Priya Shah", "Karan Iyer"][i]} initials={["AR", "RM", "PS", "KI"][i]}
+              text={[null, "Why most product roadmaps fail in month 3 🧭", "What I look for in a first-round interview 👀", "A simple way to explain AI to your CFO 🤖"][i]}
+              stats={[null, { reactions: 214, comments: 41, reposts: 12 }, { reactions: 96, comments: 33, reposts: 5 }, { reactions: 172, comments: 28, reposts: 15 }][i] || undefined}
+              role={["Senior Analyst · Finance", "Product Manager · Fintech", "HR Lead · Talent", "Data Scientist · AI"][i]} />
+          </motion.div>
+        ))}
+      </div>
+      <style>{`@media(max-width:900px){.rb-li-feed{display:none !important;}}`}</style>
+    </div>
+  );
+}
+
 export default function RealBenefits() {
+  const isLi = usePlatform().platform === "linkedin";
+  const items = isLi ? LI_BENEFITS : BENEFITS;
   const sectionRef = useRef(null);
   const [ref, inView] = useInView();
 
@@ -47,7 +77,7 @@ export default function RealBenefits() {
       }}
     >
       {/* Background Image */}
-      <motion.div
+      {isLi ? <LiBackdrop /> : <motion.div
         style={{
           position: "absolute",
           inset: 0,
@@ -58,7 +88,7 @@ export default function RealBenefits() {
           backgroundPosition: "center",
           zIndex: 0,
         }}
-      />
+      />}
 
       {/* Dark Overlay */}
       <div
@@ -117,7 +147,7 @@ export default function RealBenefits() {
                 color: "transparent",
               }}
             >
-              Real Creators.
+              {isLi ? "Real Professionals." : "Real Creators."}
             </span>
           </h2>
 
@@ -129,8 +159,9 @@ export default function RealBenefits() {
               maxWidth: 470,
             }}
           >
-            Bigger reach, stronger engagement, and a creator community that
-            grows with every post you publish.
+            {isLi
+              ? "More visibility for your expertise, stronger credibility, and a professional network that grows with every post you share."
+              : "Bigger reach, stronger engagement, and a creator community that grows with every post you publish."}
           </p>
         </motion.div>
 
@@ -145,7 +176,7 @@ export default function RealBenefits() {
             maxWidth: 760,
           }}
         >
-          {BENEFITS.map((item, i) => {
+          {items.map((item, i) => {
             const Icon = item.icon;
 
             return (
@@ -229,11 +260,11 @@ export default function RealBenefits() {
             fontSize: 13,
           }}
         >
-          <span>MORE CREATORS</span>
+          <span>{isLi ? "MORE VISIBILITY" : "MORE CREATORS"}</span>
           <span>|</span>
-          <span>MORE REACH</span>
+          <span>{isLi ? "MORE CREDIBILITY" : "MORE REACH"}</span>
           <span>|</span>
-          <span>A BRIGHTER TOMORROW</span>
+          <span>{isLi ? "MORE OPPORTUNITIES" : "A BRIGHTER TOMORROW"}</span>
         </motion.div>
       </div>
 

@@ -1,7 +1,8 @@
 import { useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { useInView } from '../hooks/useInView'
-import { Zap, DollarSign, Globe } from 'lucide-react'
+import { Zap, DollarSign, Globe, Sprout, Mic, Crown } from 'lucide-react'
+import { usePlatform } from '../context/PlatformContext'
 
 const MILESTONES = [
   { year:'Year 1', icon:Zap, color:'#3B82F6', headline:'Build the Foundation.',
@@ -12,14 +13,23 @@ const MILESTONES = [
     points:['A recognised authority in your content vertical','Mentor newer creators entering your cohort','Long-term brand partnerships locked in','Community network compounds permanently','Founding Creator status — permanent recognition'] },
 ]
 
-function MilestoneCard({ m, delay }) {
+const LI_MILESTONES = [
+  { year:'Year 1', icon:Sprout, color:'#3B82F6', headline:'Build Your Presence.',
+    points:['Join your industry community and set up your profile','Post consistently with monthly topic guides','Genuine early engagement on every post you submit','Learn what your audience responds to','Make showing up on LinkedIn a habit'] },
+  { year:'Year 2', icon:Mic, color:'#22D3EE', headline:'Become the Go-To Voice.',
+    points:['Your posts start conversations in your industry','Recruiters, clients and peers notice your work','Inbound messages and opportunities grow','Collaborate with members across industries','A profile that reflects your real expertise'] },
+  { year:'Year 3+', icon:Crown, color:'#818CF8', headline:'Own Your Space.',
+    points:['Recognised as a voice in your field','Mentor newer members of your community','Opportunities find you, not the other way round','A professional network that keeps compounding','A long-standing member of the Torque community'] },
+]
+
+function MilestoneCard({ m, delay, index }) {
   const ref = useRef(null)
   const [secRef, inView] = useInView()
   const x = useMotionValue(0), y = useMotionValue(0)
   const rX = useSpring(useTransform(y,[-80,80],[7,-7]),{stiffness:300,damping:30})
   const rY = useSpring(useTransform(x,[-80,80],[-7,7]),{stiffness:300,damping:30})
   const Icon = m.icon
-  const floatCls = ['float-a','float-b','float-c'][MILESTONES.indexOf(m)%3]
+  const floatCls = ['float-a','float-b','float-c'][index%3]
   return (
     <motion.div ref={secRef} initial={{opacity:0,y:48}} animate={inView?{opacity:1,y:0}:{}}
       transition={{duration:0.8,delay,ease:[0.23,1,0.32,1]}} style={{perspective:900}}>
@@ -62,18 +72,20 @@ function MilestoneCard({ m, delay }) {
 
 export default function CreatorTimeline() {
   const [ref, inView] = useInView()
+  const isLi = usePlatform().platform === 'linkedin'
+  const list = isLi ? LI_MILESTONES : MILESTONES
   return (
     <section className="section-py" style={{ background:'rgba(13,19,38,0.25)' }}>
       <div className="container">
         <motion.div ref={ref} initial={{opacity:0,y:24}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:0.7}}
           style={{ textAlign:'center', marginBottom:64 }}>
-          <span className="section-tag" style={{ color:'#818CF8' }}>Creator Milestones</span>
+          <span className="section-tag" style={{ color:'#818CF8' }}>{isLi ? 'Professional Milestones' : 'Creator Milestones'}</span>
           <h2 style={{ fontSize:'clamp(2rem,4vw,3rem)', fontWeight:700, lineHeight:1.1, letterSpacing:'-0.03em' }}>
             Your journey,<br/><span className="gradient-text">year by year.</span>
           </h2>
         </motion.div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:24 }} className="timeline-grid">
-          {MILESTONES.map((m,i)=><MilestoneCard key={m.year} m={m} delay={i*0.15}/>)}
+          {list.map((m,i)=><MilestoneCard key={`${isLi}-${m.year}`} m={m} index={i} delay={i*0.15}/>)}
         </div>
       </div>
       <style>{`@media(max-width:900px){.timeline-grid{grid-template-columns:1fr !important;}}@media(min-width:580px) and (max-width:900px){.timeline-grid{grid-template-columns:repeat(2,1fr) !important;}}`}</style>

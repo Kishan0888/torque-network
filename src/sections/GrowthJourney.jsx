@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useInView } from "../hooks/useInView";
+import { usePlatform } from "../context/PlatformContext";
 import {
   TrendingUp,
   Heart,
@@ -7,12 +8,37 @@ import {
   Briefcase,
   Crown,
   Infinity,
+  Eye,
+  MessageSquare,
+  Handshake,
+  BadgeCheck,
 } from "lucide-react";
+
+// LinkedIn version of the journey. Illustrative, like the Instagram one, so words not promises.
+const LI = {
+  tag: "The Professional Journey",
+  sub: "Professional growth on LinkedIn isn't one viral post — it's showing up consistently and being seen by the right people.",
+  window: "Week 1 → Month 12",
+  label: "Real Professional Journey",
+  momentumLabel: "Posting streak",
+  momentum: "12 weeks",
+  stats: [
+    { icon: MessageSquare, title: "Post engagement", start: "Few", end: "Steady", width: "82%", color: "#22D3EE" },
+    { icon: Eye, title: "Profile views", start: "Low", end: "Rising", width: "90%", color: "#3B82F6" },
+    { icon: Handshake, title: "Opportunities", start: "None", end: "Inbound", width: "86%", color: "#FACC15" },
+  ],
+  milestones: [
+    { icon: TrendingUp, title: "Early Engagement", text: "Peers react to every post you submit", color: "#22D3EE" },
+    { icon: BadgeCheck, title: "Stronger Credibility", text: "Comments that build profile authority", color: "#818CF8" },
+    { icon: Infinity, title: "Long-term Network", text: "Referrals and opportunities that compound", color: "#10B981" },
+  ],
+};
 
 export default function GrowthJourney() {
   const [ref, inView] = useInView();
+  const isLi = usePlatform().platform === "linkedin";
 
-  const stats = [
+  const igStats = [
     {
       icon: Heart,
       title: "Engagement",
@@ -39,7 +65,7 @@ export default function GrowthJourney() {
     },
   ];
 
-  const milestones = [
+  const igMilestones = [
     {
       icon: TrendingUp,
       title: "500–1,000 Interactions",
@@ -59,6 +85,9 @@ export default function GrowthJourney() {
       color: "#10B981",
     },
   ];
+
+  const stats = isLi ? LI.stats : igStats;
+  const milestones = isLi ? LI.milestones : igMilestones;
 
   return (
     <section
@@ -90,7 +119,7 @@ export default function GrowthJourney() {
           style={{ textAlign: "center", marginBottom: 60 }}
         >
           <span className="section-tag" style={{ color: "#22D3EE" }}>
-            The Creator Journey
+            {isLi ? LI.tag : "The Creator Journey"}
           </span>
 
           <h2
@@ -114,8 +143,7 @@ export default function GrowthJourney() {
               lineHeight: 1.7,
             }}
           >
-            Real creator growth isn't a viral spike — it's consistent momentum
-            that compounds over time.
+            {isLi ? LI.sub : "Real creator growth isn't a viral spike — it's consistent momentum that compounds over time."}
           </p>
         </motion.div>
 
@@ -167,7 +195,7 @@ export default function GrowthJourney() {
                     fontFamily: "Space Grotesk",
                   }}
                 >
-                  30 Days → 36 Months
+                  {isLi ? LI.window : "30 Days → 36 Months"}
                 </div>
               </div>
 
@@ -181,7 +209,7 @@ export default function GrowthJourney() {
                   fontWeight: 700,
                 }}
               >
-                Real Creator Journey
+                {isLi ? LI.label : "Real Creator Journey"}
               </div>
             </div>
 
@@ -248,7 +276,7 @@ export default function GrowthJourney() {
                 }}
               >
                 <div style={{ color: "#94A3B8", fontSize: 12 }}>
-                  Momentum
+                  {isLi ? LI.momentumLabel : "Momentum"}
                 </div>
                 <div
                   style={{
@@ -257,7 +285,7 @@ export default function GrowthJourney() {
                     fontSize: 20,
                   }}
                 >
-                  +486%
+                  {isLi ? LI.momentum : "+486%"}
                 </div>
               </motion.div>
             </div>

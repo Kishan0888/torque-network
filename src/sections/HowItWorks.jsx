@@ -135,6 +135,8 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useInView } from "../hooks/useInView";
+import { usePlatform } from "../context/PlatformContext";
+import LiHowSteps from "./linkedin/LiHowSteps";
 import {
   ClipboardCheck,
   Send,
@@ -313,6 +315,7 @@ function StepNode({ step, index, inView }) {
 
 export default function HowItWorks() {
   const [ref, inView] = useInView();
+  const isLi = usePlatform().platform === "linkedin";
   const containerRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -379,7 +382,7 @@ export default function HowItWorks() {
             }}
           />
 
-          <motion.img
+          {isLi ? <div style={{ position: "relative", zIndex: 1 }}><LiHowSteps /></div> : <motion.img
             src="/2.png"
             alt="Torque Network Infographic"
             whileHover={{ scale: 1.02 }}
@@ -390,7 +393,7 @@ export default function HowItWorks() {
               position: "relative",
               zIndex: 1,
             }}
-          />
+          />}
         </motion.div>
 
         {/* Desktop Timeline */}

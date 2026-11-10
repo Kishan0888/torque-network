@@ -1,11 +1,19 @@
 import { motion } from 'framer-motion'
 import { useInView, useCounter } from '../hooks/useInView'
+import { usePlatform } from '../context/PlatformContext'
 
 const METRICS = [
   { value:2500, prefix:'500–', suffix:'+', label:'Real creators engage your post', sub:'Per post submitted' },
   { value:10000, prefix:'', suffix:'+',   label:'Real influencers in the network', sub:'Growing every week' },
   { value:48,   prefix:'', suffix:' hrs', label:'Engagement window',               sub:'Staggered naturally' },
   { value:750,  prefix:'₹', suffix:'',    label:'Per month · Instagram plan',      sub:'LinkedIn plan ₹500/month' },
+]
+
+const LI_METRICS = [
+  { value:9,   prefix:'', suffix:'',        label:'Industry communities',         sub:'From HR to healthcare' },
+  { value:2,   prefix:'', suffix:' / week', label:'Posts you can submit',          sub:'Reviewed by our team' },
+  { value:12,  prefix:'', suffix:'',        label:'Monthly content guides a year', sub:'Topics for your domain' },
+  { value:500, prefix:'₹', suffix:'',       label:'Per month · LinkedIn plan',     sub:'Instagram plan ₹750/month' },
 ]
 
 function Metric({ m, delay }) {
@@ -27,6 +35,7 @@ function Metric({ m, delay }) {
 
 export default function Metrics() {
   const [ref, inView] = useInView()
+  const list = usePlatform().platform === 'linkedin' ? LI_METRICS : METRICS
   return (
     <section style={{ padding: '0' }}>
       <div className="container">
@@ -37,7 +46,7 @@ export default function Metrics() {
             position:'relative', overflow:'hidden' }} className="metrics-card">
           <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:'70%', height:1, background:'linear-gradient(to right,transparent,rgba(34,211,238,0.35),transparent)' }}/>
           {[1,2,3].map(i=><div key={i} style={{ position:'absolute', left:`${i*25}%`, top:'15%', bottom:'15%', width:1, background:'rgba(59,130,246,0.1)' }} className="metric-div"/>)}
-          {METRICS.map((m,i)=><Metric key={m.label} m={m} delay={i*0.09}/>)}
+          {list.map((m,i)=><Metric key={m.label} m={m} delay={i*0.09}/>)}
         </motion.div>
       </div>
       <style>{`@media(max-width:640px){.metrics-card{grid-template-columns:repeat(2,1fr) !important;gap:36px 0 !important;padding:32px 20px !important;}.metric-div{display:none !important;}}`}</style>

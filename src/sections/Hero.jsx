@@ -201,7 +201,8 @@
 //     </section>
 //   )
 // }
-import { Suspense, lazy, useState, useRef, useEffect } from "react";
+import { Suspense, lazy, useState, useRef } from "react";
+import { usePlatform } from "../context/PlatformContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Volume2, VolumeX, Briefcase, ThumbsUp, MessageSquare, Repeat2 } from "lucide-react";
 import heroVideo from "../assets/video.mp4";
@@ -218,7 +219,7 @@ const fadeUp = (d = 0) => ({
 const IG_GRAD = "linear-gradient(135deg,#F58529,#DD2A7B 55%,#8134AF)";
 const LI_BLUE = "#0A66C2";
 
-// Copy for each platform. The hero gently alternates until the visitor picks one.
+// Copy for each platform. The switch sets the platform for the whole page.
 const PLATFORM_COPY = {
   instagram: {
     tab: "Instagram creators",
@@ -234,13 +235,13 @@ const PLATFORM_COPY = {
     body: "Torque for LinkedIn is a professional growth community. Share your posts with verified peers from your own industry who react, comment thoughtfully and repost, so your expertise reaches the right people well beyond your connections.",
     cta: "Join Torque for LinkedIn",
     href: "/signup?plan=linkedin",
-    ghost: { label: "Explore LinkedIn", href: "#linkedin" },
+    ghost: { label: "See How It Works", href: "#how-it-works" },
     people: "Professionals across 9 industries",
     price: "₹500/month · Cancel anytime",
   },
 };
 
-function PlatformSwitch({ platform, onPick }) {
+export function PlatformSwitch({ platform, onPick }) {
   return (
     <div role="tablist" aria-label="Choose your platform" className="hero-switch"
       style={{ display: "inline-flex", padding: 5, gap: 4, borderRadius: 999, background: "rgba(13,19,38,.75)", border: "1px solid rgba(255,255,255,.09)", marginBottom: 22 }}>
@@ -300,18 +301,11 @@ function LinkedInPostMock() {
 export default function Hero() {
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
-  const [platform, setPlatform] = useState("instagram");
-  const [picked, setPicked] = useState(false);
+  // Shared with every section below: switching here switches the whole page.
+  const { platform, setPlatform } = usePlatform();
   const copy = PLATFORM_COPY[platform];
   const isLi = platform === "linkedin";
-
-  // Alternate between the two platforms until the visitor chooses one.
-  useEffect(() => {
-    if (picked) return;
-    const t = setInterval(() => setPlatform((p) => (p === "instagram" ? "linkedin" : "instagram")), 6500);
-    return () => clearInterval(t);
-  }, [picked]);
-  const pick = (k) => { setPicked(true); setPlatform(k); };
+  const pick = (k) => setPlatform(k);
 
   const toggleSound = async () => {
     if (!videoRef.current) return;

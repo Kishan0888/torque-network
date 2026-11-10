@@ -76,6 +76,8 @@
 import { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useInView } from "../hooks/useInView";
+import { usePlatform } from "../context/PlatformContext";
+import LiWhatIs from "./linkedin/LiWhatIs";
 import { Users, Zap, Shield } from "lucide-react";
 
 const CARDS = [
@@ -221,6 +223,7 @@ function TiltCard({ card, delay }) {
 
 export default function WhatIsTorque() {
   const [ref, inView] = useInView();
+  const isLi = usePlatform().platform === "linkedin";
 
   return (
     <section
@@ -329,8 +332,9 @@ export default function WhatIsTorque() {
               lineHeight: 1.7,
             }}
           >
-            Stop posting into silence. Turn every upload into meaningful reach,
-  stronger engagement, and momentum that compounds with every post.
+            {isLi
+              ? "Stop posting into the void. Turn every LinkedIn post into real conversations, stronger credibility and opportunities that compound with every post."
+              : "Stop posting into silence. Turn every upload into meaningful reach, stronger engagement, and momentum that compounds with every post."}
           </p>
         </motion.div>
 
@@ -362,7 +366,7 @@ export default function WhatIsTorque() {
             }}
           />
 
-          <motion.img
+          {isLi ? <div style={{ position: "relative", zIndex: 1 }}><LiWhatIs /></div> : <motion.img
             src="/3.png"
             alt="Torque Network Infographic"
             whileHover={{ scale: 1.015 }}
@@ -373,7 +377,7 @@ export default function WhatIsTorque() {
               position: "relative",
               zIndex: 1,
             }}
-          />
+          />}
         </motion.div>
 
         

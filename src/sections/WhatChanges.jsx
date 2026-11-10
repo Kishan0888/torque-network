@@ -104,6 +104,8 @@
 // }
 import { motion } from "framer-motion";
 import { useInView } from "../hooks/useInView";
+import { usePlatform } from "../context/PlatformContext";
+import LiProblemSolution from "./linkedin/LiProblemSolution";
 
 function ConstellationBg() {
   const lines = [
@@ -157,6 +159,7 @@ function ConstellationBg() {
 
 export default function Problem() {
   const [ref, inView] = useInView();
+  const isLi = usePlatform().platform === "linkedin";
 
   return (
     <section
@@ -187,7 +190,7 @@ export default function Problem() {
               marginBottom: 22,
             }}
           >
-            The Problem Every Creator Faces
+            {isLi ? "The Problem Every Professional Faces" : "The Problem Every Creator Faces"}
           </span>
 
           {/* <h2
@@ -234,6 +237,7 @@ export default function Problem() {
             backdropFilter: "blur(22px)",
           }}
         >
+          {isLi ? <LiProblemSolution /> : <>
           <img
             className="wc-desktop"
             src="/1.png"
@@ -251,6 +255,7 @@ export default function Problem() {
             </div>
             <img src="/solution-mobile.jpg" alt="The solution: a creator network that amplifies your content." loading="lazy" width="786" height="872" />
           </div>
+          </>}
         </motion.div>
       </div>
 

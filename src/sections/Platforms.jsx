@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useInView } from '../hooks/useInView'
 import { ArrowRight, Check, Eye, Bookmark, Send, ThumbsUp, MessageSquare, Repeat2 } from 'lucide-react'
 import { InstagramGlyph, LinkedInGlyph } from '../components/BrandGlyphs'
+import { usePlatform } from '../context/PlatformContext'
 
 /**
  * "One network. Two platforms." — sits right under the hero and makes it clear
@@ -26,7 +27,7 @@ const PLATFORMS = [
     ],
     price: '₹750',
     cta: { label: 'Join Torque for Instagram', href: '/signup?plan=instagram' },
-    more: { label: 'How it works', href: '#how-it-works' },
+    more: { label: 'See Instagram details', href: '#creators' },
   },
   {
     key: 'linkedin',
@@ -46,12 +47,13 @@ const PLATFORMS = [
     ],
     price: '₹500',
     cta: { label: 'Join Torque for LinkedIn', href: '/signup?plan=linkedin' },
-    more: { label: 'Explore LinkedIn', href: '#linkedin' },
+    more: { label: 'See LinkedIn details', href: '#creators' },
   },
 ]
 
 function PlatformCard({ p, inView, delay }) {
   const { Glyph } = p
+  const { setPlatform } = usePlatform()
   return (
     <motion.article
       initial={{ opacity: 0, y: 36 }} animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -98,7 +100,7 @@ function PlatformCard({ p, inView, delay }) {
           <a href={p.cta.href} style={{ flex: '1 1 220px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 20px', borderRadius: 14, background: p.grad, color: '#fff', fontWeight: 700, fontSize: 14.5, textDecoration: 'none', boxShadow: `0 10px 26px -8px ${p.glow}` }}>
             {p.cta.label} <ArrowRight size={16} />
           </a>
-          <a href={p.more.href} style={{ padding: '14px 8px', fontSize: 14, fontWeight: 600, color: '#94A3B8', textDecoration: 'none' }}>{p.more.label} →</a>
+          <a href={p.more.href} onClick={() => setPlatform(p.key)} style={{ padding: '14px 8px', fontSize: 14, fontWeight: 600, color: '#94A3B8', textDecoration: 'none' }}>{p.more.label} →</a>
         </div>
       </div>
     </motion.article>

@@ -6,7 +6,6 @@ const NAV = [
   { label: 'Platforms', href: '#platforms' },
   { label: 'What is Torque?', href: '#what-is-torque' },
   { label: 'How It Works', href: '#how-it-works' },
-  { label: 'LinkedIn', href: '#linkedin' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'FAQ', href: '#faq' },
 ]

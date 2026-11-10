@@ -3,6 +3,8 @@ import Cursor from './components/Cursor'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import StarField from './components/StarField'
+import PlatformFloat from './components/PlatformFloat'
+import { PlatformProvider, usePlatform } from './context/PlatformContext'
 
 import Hero             from './sections/Hero'
 import Metrics          from './sections/Metrics'
@@ -36,6 +38,11 @@ function D() {
   )
 }
 
+/** Instagram niches ↔ LinkedIn industries, following the page's platform switch. */
+function Communities() {
+  return usePlatform().platform === 'linkedin' ? <LinkedInShowcase /> : <DifferentCreators />
+}
+
 export default function App() {
   useEffect(() => {
     const h = (e) => {
@@ -49,10 +56,12 @@ export default function App() {
   }, [])
 
   return (
+    <PlatformProvider>
     <div style={{ background:'#050816', minHeight:'100vh' }}>
       <StarField />
       <Cursor />
       <Navbar />
+      <PlatformFloat />
       <main>
         {/* 1 */}
         <Hero />
@@ -85,9 +94,7 @@ export default function App() {
         {/* <MemberBenefits />
         <D/> */}
         
-        <DifferentCreators />
-        <D/>
-        <LinkedInShowcase />
+        <Communities />
         <D/>
         
         
@@ -123,5 +130,6 @@ export default function App() {
       </main>
       <Footer />
     </div>
+    </PlatformProvider>
   )
 }
