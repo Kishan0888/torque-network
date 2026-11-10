@@ -7,11 +7,11 @@
  * - Members with both plans switch platform with the toggle in the header.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { ArrowUp, CreditCard, FileText, Home as HomeIcon, ListChecks, Menu, PlaySquare, Rows3, X, Shield } from 'lucide-react'
+import { ArrowUp, BarChart3, CreditCard, FileText, Home as HomeIcon, ListChecks, Menu, PlaySquare, Rows3, X, Shield } from 'lucide-react'
 import { apiFetch } from '../lib/api'
 import { Link, Redirect, navigate, usePathname } from '../lib/router'
 import { supabase } from '../lib/supabase'
-import { PLATFORM_LABEL, WHATSAPP_COMMUNITY_URL } from '../../shared/memberConfig.js'
+import { PLATFORM_LABEL, WHATSAPP_COMMUNITY_URLS, PLATFORM_FEATURES } from '../../shared/memberConfig.js'
 import './dashboard.css'
 import Setup from './pages/Setup'
 import Home from './pages/Home'
@@ -21,20 +21,24 @@ import MyPosts from './pages/MyPosts'
 import Resources from './pages/Resources'
 import Guide from './pages/Guide'
 import Subscription from './pages/Subscription'
+import Analytics from './pages/Analytics'
 
 const DashCtx = createContext(null)
 // eslint-disable-next-line react/only-export-components
 export const useDash = () => useContext(DashCtx)
 
+// [path, label, icon, feature flag required (LinkedIn-only pages)]
 const NAV = [
   ['/dashboard', 'Home', HomeIcon],
   ['/dashboard/submit', 'Submit a post', ArrowUp],
-  ['/dashboard/timeline', 'Timeline', Rows3],
+  ['/dashboard/timeline', 'Member Posts', Rows3],
   ['/dashboard/posts', 'My posts', ListChecks],
-  ['/dashboard/resources', 'Resources', PlaySquare],
-  ['/dashboard/guide', 'Monthly guide', FileText],
+  ['/dashboard/analytics', 'Analytics', BarChart3],
+  ['/dashboard/resources', 'Growth Playbook', PlaySquare, 'playbook'],
+  ['/dashboard/guide', 'Monthly guide', FileText, 'guide'],
   ['/dashboard/subscription', 'Subscription', CreditCard],
 ]
+const PAGE_FEATURE = { '/dashboard/resources': 'playbook', '/dashboard/guide': 'guide' }
 const PAGES = {
   '/dashboard': Home,
   '/dashboard/submit': Submit,
@@ -43,6 +47,7 @@ const PAGES = {
   '/dashboard/resources': Resources,
   '/dashboard/guide': Guide,
   '/dashboard/subscription': Subscription,
+  '/dashboard/analytics': Analytics,
 }
 const PLATFORM_KEY = 'torque_dashboard_platform'
 const readStored = () => { try { return localStorage.getItem(PLATFORM_KEY) } catch { return null } }
@@ -76,7 +81,7 @@ export default function DashboardApp() {
   const value = useMemo(() => boot && platform && ({
     ...boot, platform, owned, setPlatform, reload,
     setup: boot.platforms[platform] || null,
-    joinedWhatsApp: Boolean(boot.member?.whatsapp_joined_at),
+    joinedWhatsApp: Boolean(boot.platforms[platform]?.whatsapp_joined_at),
   }), [boot, platform, owned, reload])
 
   if (error) {
@@ -96,6 +101,7 @@ export default function DashboardApp() {
   }
   const Page = PAGES[path]
   if (!Page) return <Redirect to="/dashboard" />
+  if (PAGE_FEATURE[path] && !PLATFORM_FEATURES[platform][PAGE_FEATURE[path]]) return <Redirect to="/dashboard" />
 
   return (
     <DashCtx.Provider value={value}>
@@ -128,7 +134,7 @@ function Shell({ path, children }) {
           {open && <button aria-label="Close menu" onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#fff' }}><X size={20} /></button>}
         </div>
         <nav className="tn-nav" onClick={() => setOpen(false)}>
-          {NAV.map(([to, label, Icon]) => (
+          {NAV.filter(([, , , f]) => !f || PLATFORM_FEATURES[d.platform][f]).map(([to, label, Icon]) => (
             <Link key={to} to={to} className={path === to ? 'active' : ''}><Icon size={17} /> {label}</Link>
           ))}
           {d.isAdmin && <Link to="/admin" className=""><Shield size={17} /> Admin panel</Link>}
@@ -153,19 +159,29 @@ function Shell({ path, children }) {
   )
 }
 
-/** "Join" until the member has opened the community once, then "Go to". */
-export function WhatsAppButton({ className = 'tn-wa-btn', label }) {
+/**
+ * The WhatsApp community for a platform (defaults to the one being viewed).
+ * "Join" until the member has opened it once, then "Go to". If the link isn't
+ * set yet (LinkedIn for now) the button shows "coming soon".
+ */
+export function WhatsAppButton({ className = 'tn-wa-btn', label, platform }) {
   const d = useDash()
-  const [joined, setJoined] = useState(d.joinedWhatsApp)
+  const p = platform || d.platform
+  const url = WHATSAPP_COMMUNITY_URLS[p]
+  const [joined, setJoined] = useState(Boolean(d.platforms[p]?.whatsapp_joined_at))
+  const name = d.owned.length > 1 ? `${PLATFORM_LABEL[p]} ` : ''
+  if (!url) {
+    return <span className={className} aria-disabled="true" style={{ opacity: 0.65, cursor: 'default' }}>{name}WhatsApp community: link coming soon</span>
+  }
   return (
-    <a className={className} href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noopener noreferrer"
+    <a className={className} href={url} target="_blank" rel="noopener noreferrer"
       onClick={() => {
         if (!joined) {
           setJoined(true)
-          apiFetch('/api/dashboard?action=whatsapp', { method: 'POST' }).then(() => d.reload()).catch(() => {})
+          apiFetch('/api/dashboard?action=whatsapp', { method: 'POST', body: { platform: p } }).then(() => d.reload()).catch(() => {})
         }
       }}>
-      {label || (joined ? 'Go to WhatsApp Community' : 'Join WhatsApp Community')}
+      {label || (joined ? `Go to ${name}WhatsApp Community` : `Join ${name}WhatsApp Community`)}
     </a>
   )
 }

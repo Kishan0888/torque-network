@@ -3,7 +3,7 @@ import { Link } from '../../lib/router'
 import { apiFetch } from '../../lib/api'
 import { useDash, usePlatformData, PageHead, Notice } from '../DashboardApp'
 import { weeklyIdeas } from '../ideas'
-import { CHECKLIST } from '../../../shared/memberConfig.js'
+import { CHECKLIST, PLATFORM_FEATURES } from '../../../shared/memberConfig.js'
 
 const NUM_COLORS = ['#f7b93e', '#f6ab92', '#bfd3f6']
 
@@ -33,15 +33,23 @@ export default function Home() {
               </div>
             </div>
             <Link to="/dashboard/timeline" className="tn-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div className="tn-stat-label">New in your timeline</div>
+              <div className="tn-stat-label">New in Member Posts</div>
               <div className="tn-stat">{data.timelineNew} post{data.timelineNew === 1 ? '' : 's'}</div>
               <div className="tn-small">from {d.setup?.domain || 'your'} peers this week</div>
             </Link>
-            <div className="tn-card">
-              <div className="tn-stat-label">This month’s guide</div>
-              <div style={{ fontSize: 18, fontWeight: 800, margin: '6px 0 4px' }}>{monthName} content plan</div>
-              {data.guide ? <Link to="/dashboard/guide" className="tn-link">Open guide →</Link> : <span className="tn-small">Coming soon</span>}
-            </div>
+            {PLATFORM_FEATURES[d.platform].guide ? (
+              <div className="tn-card">
+                <div className="tn-stat-label">This month’s guide</div>
+                <div style={{ fontSize: 18, fontWeight: 800, margin: '6px 0 4px' }}>{monthName} content plan</div>
+                {data.guide ? <Link to="/dashboard/guide" className="tn-link">Open guide →</Link> : <span className="tn-small">Coming soon</span>}
+              </div>
+            ) : (
+              <Link to="/dashboard/timeline" className="tn-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="tn-stat-label">Waiting for your engagement</div>
+                <div className="tn-stat orange">{data.toEngage ?? 0} post{data.toEngage === 1 ? '' : 's'}</div>
+                <div className="tn-small">Support your peers, then mark them done</div>
+              </Link>
+            )}
           </div>
 
           <div className="tn-grid tn-grid-2-1">
@@ -89,7 +97,7 @@ function Checklist({ spotlight }) {
       ))}
       {spotlight && (
         <div className="tn-card amber" style={{ marginTop: 12, padding: '10px 12px', fontSize: 13 }}>
-          <strong>Spotlight:</strong> {spotlight.name}{spotlight.domain ? ` from ${spotlight.domain}` : ''} — “{spotlight.summary}”{' '}
+          <strong>Spotlight:</strong> {spotlight.name}{spotlight.domain ? ` from ${spotlight.domain}` : ''} {spotlight.summary ? <> — “{spotlight.summary}”</> : null}{' '}
           <a href={spotlight.url} target="_blank" rel="noopener noreferrer" className="tn-link">View ↗</a>
         </div>
       )}

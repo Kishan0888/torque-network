@@ -72,7 +72,7 @@ const subscribe = (userId, plan) => tables.subscriptions.push({ user_id: userId,
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k]
-  Object.assign(tables, { subscriptions: [], profiles: [{ id: 'u1', full_name: 'Priya Sharma' }, { id: 'u2', full_name: 'Rohan Mehta' }], member_platforms: [], member_profiles: [], member_posts: [], admins: [], resources: [], monthly_guides: [], payments: [] })
+  Object.assign(tables, { subscriptions: [], profiles: [{ id: 'u1', full_name: 'Priya Sharma' }, { id: 'u2', full_name: 'Rohan Mehta' }], member_platforms: [], member_profiles: [], member_posts: [], post_engagements: [], admins: [], resources: [], monthly_guides: [], payments: [] })
   currentUser = { id: 'u1', email: 'priya@example.com', identities: [] }
 })
 
@@ -140,6 +140,80 @@ describe('member dashboard API', () => {
     expect(all.body.posts[0].author.name).toBe('Rohan Mehta')
     const mine = await call(dash, 'GET', 'timeline', null, '&platform=linkedin&filter=domain')
     expect(mine.body.posts.map((p) => p.id)).toEqual(['a'])
+  })
+})
+
+describe('client feedback: Instagram link-only posts, own categories, engagement analytics', () => {
+  const now = () => new Date().toISOString()
+  const setupBoth = () => {
+    subscribe('u1', 'plan_LI'); subscribe('u1', 'plan_IG'); subscribe('u2', 'plan_LI'); subscribe('u2', 'plan_IG')
+    for (const u of ['u1', 'u2']) {
+      tables.member_platforms.push({ user_id: u, platform: 'linkedin', domain: 'Marketing & Creative', interests: [], onboarded_at: 'x' })
+      tables.member_platforms.push({ user_id: u, platform: 'instagram', domain: 'Food & Cooking', interests: [], onboarded_at: 'x' })
+    }
+  }
+
+  it('Instagram posts need only the link; LinkedIn accepts a member-typed category', async () => {
+    setupBoth()
+    const ig = await call(dash, 'POST', 'submit', { platform: 'instagram', url: 'https://www.instagram.com/reel/Cabc123/' })
+    expect(ig.status).toBe(200)
+    expect(ig.body.post).toMatchObject({ category: null, summary: null })
+    const li = (category) => call(dash, 'POST', 'submit', { platform: 'linkedin', url: `https://www.linkedin.com/posts/p_t-activity-${category.length}`, category, summary: 'A lesson' })
+    expect((await li('Product launch')).body.post.category).toBe('Product launch')
+    expect((await li('<b>')).status).toBe(400)
+    expect((await call(dash, 'POST', 'submit', { platform: 'linkedin', url: 'https://www.linkedin.com/posts/p_t-activity-99', category: 'Tools' })).status).toBe(400) // summary still required on LinkedIn
+  })
+
+  it('members mark peers’ posts engaged; analytics shows who engaged and what I have / haven’t engaged with', async () => {
+    setupBoth()
+    tables.member_posts.push(
+      { id: '00000000-0000-4000-8000-00000000000a', user_id: 'u2', platform: 'linkedin', status: 'approved', domain: 'Marketing & Creative', summary: 'Rohan post A', url: 'ua', category: 'Tools', reviewed_at: now() },
+      { id: '00000000-0000-4000-8000-00000000000b', user_id: 'u2', platform: 'linkedin', status: 'approved', domain: 'Marketing & Creative', summary: 'Rohan post B', url: 'ub', category: 'Tools', reviewed_at: now() },
+      { id: '00000000-0000-4000-8000-00000000000c', user_id: 'u1', platform: 'linkedin', status: 'approved', domain: 'Marketing & Creative', summary: 'Priya post', url: 'uc', category: 'Tools', reviewed_at: now() },
+      { id: '00000000-0000-4000-8000-00000000000d', user_id: 'u2', platform: 'linkedin', status: 'pending', domain: 'Marketing & Creative', summary: 'pending', url: 'ud', category: 'Tools', reviewed_at: now() },
+    )
+    const A = '00000000-0000-4000-8000-00000000000a', C = '00000000-0000-4000-8000-00000000000c', D = '00000000-0000-4000-8000-00000000000d'
+    expect((await call(dash, 'POST', 'engage', { post_id: C })).status).toBe(400) // own post
+    expect((await call(dash, 'POST', 'engage', { post_id: D })).status).toBe(404) // not approved
+    expect((await call(dash, 'POST', 'engage', { post_id: A })).body.engaged).toBe(true)
+    await call(dash, 'POST', 'engage', { post_id: A }) // idempotent
+    expect(tables.post_engagements).toHaveLength(1)
+
+    const todo = await call(dash, 'GET', 'timeline', null, '&platform=linkedin&filter=all&view=todo')
+    expect(todo.body.posts.map((p) => p.summary)).toEqual(['Rohan post B'])
+    expect(todo.body.counts).toEqual({ todo: 1, done: 1, all: 2 })
+
+    // Rohan engages with Priya's post → Priya's analytics names him.
+    currentUser = { id: 'u2', email: 'rohan@example.com', identities: [] }
+    await call(dash, 'POST', 'engage', { post_id: C })
+    currentUser = { id: 'u1', email: 'priya@example.com', identities: [] }
+    const a = await call(dash, 'GET', 'analytics', null, '&platform=linkedin')
+    expect(a.body.totals).toMatchObject({ received: 1, uniqueEngagers: 1, livePosts: 1, given: 1, feedDone: 1, feedTodo: 1 })
+    expect(a.body.myPosts[0].engagers.map((e) => e.name)).toEqual(['Rohan Mehta'])
+    expect(a.body.engaged.map((p) => p.summary)).toEqual(['Rohan post A'])
+    expect(a.body.notEngaged.map((p) => p.summary)).toEqual(['Rohan post B'])
+
+    // An Instagram engagement doesn't count on the LinkedIn analytics (and vice versa).
+    const IG = '00000000-0000-4000-8000-0000000000e1'
+    tables.member_posts.push({ id: IG, user_id: 'u2', platform: 'instagram', status: 'approved', url: 'https://www.instagram.com/reel/abc/', reviewed_at: now() })
+    expect((await call(dash, 'POST', 'engage', { post_id: IG })).body.engaged).toBe(true)
+    expect((await call(dash, 'GET', 'analytics', null, '&platform=linkedin')).body.totals.given).toBe(1)
+    expect((await call(dash, 'GET', 'analytics', null, '&platform=instagram')).body.totals.given).toBe(1)
+
+    // Undo
+    expect((await call(dash, 'POST', 'engage', { post_id: A, engaged: false })).body.engaged).toBe(false)
+    expect(tables.post_engagements.filter((r) => r.user_id === 'u1' && r.post_id === A)).toHaveLength(0)
+  })
+
+  it('WhatsApp joins are tracked per platform; Growth Playbook is empty for Instagram', async () => {
+    setupBoth()
+    tables.resources.push({ id: 'r1', platform: 'all', title: 'Video', youtube_url: 'https://youtu.be/abcdefghijk', published: true, sort_order: 0 })
+    await call(dash, 'POST', 'whatsapp', { platform: 'instagram' })
+    const rows = Object.fromEntries(tables.member_platforms.filter((r) => r.user_id === 'u1').map((r) => [r.platform, r.whatsapp_joined_at]))
+    expect(rows.instagram).toBeTruthy()
+    expect(rows.linkedin).toBeFalsy()
+    expect((await call(dash, 'GET', 'resources', null, '&platform=instagram')).body.resources).toEqual([])
+    expect((await call(dash, 'GET', 'resources', null, '&platform=linkedin')).body.resources).toHaveLength(1)
   })
 })
 

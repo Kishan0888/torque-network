@@ -7,7 +7,7 @@ import { apiFetch } from '../lib/api'
 import { Link, navigate } from '../lib/router'
 import { supabase } from '../lib/supabase'
 import '../dashboard/dashboard.css'
-import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId } from '../../shared/memberConfig.js'
+import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId, postTitle } from '../../shared/memberConfig.js'
 
 const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['guides', 'Monthly guides'], ['members', 'Members']]
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '—')
@@ -98,10 +98,10 @@ function Review() {
             {data.posts.map((p) => (
               <div key={p.id} className="tn-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-                  <div className="tn-small"><strong style={{ color: 'var(--ink)' }}>{p.author || 'Member'}</strong> · {PLATFORM_LABEL[p.platform]} · {p.domain || '—'} · {p.category}{p.topic ? ` · ${p.topic}` : ''}</div>
+                  <div className="tn-small"><strong style={{ color: 'var(--ink)' }}>{p.author || 'Member'}</strong> · {PLATFORM_LABEL[p.platform]} · {p.domain || '—'}{p.category ? ` · ${p.category}` : ''}{p.topic ? ` · ${p.topic}` : ''}</div>
                   <span className="tn-small">Submitted {fmt(p.created_at)}</span>
                 </div>
-                <p style={{ fontSize: 15, fontWeight: 700, margin: '6px 0' }}>{p.summary}</p>
+                <p style={{ fontSize: 15, fontWeight: 700, margin: '6px 0' }}>{postTitle(p)}</p>
                 <a href={p.url} target="_blank" rel="noopener noreferrer" className="tn-link" style={{ wordBreak: 'break-all' }}>{p.url} ↗</a>
                 <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   <input className="tn-input" style={{ flex: '1 1 260px' }} maxLength={300} placeholder="Note for the member (required to reject)"

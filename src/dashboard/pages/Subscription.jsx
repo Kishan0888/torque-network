@@ -4,6 +4,7 @@ import { Link } from '../../lib/router'
 import { useDash, WhatsAppButton, PageHead, Notice } from '../DashboardApp'
 import { PLANS, priceLabel, STATUS_COPY, IN_PROGRESS, fmtDate, fmtAmount } from '../../auth/plans'
 
+const PLATFORM_COMMUNITY = { instagram: 'Torque for Instagram', linkedin: 'Torque for LinkedIn' }
 const PAYMENT_STATUS = { captured: ['Paid', 'paid'], authorized: ['Authorised', 'neutral'], failed: ['Failed', 'failed'], refunded: ['Refunded', 'neutral'] }
 
 export default function Subscription() {
@@ -56,7 +57,7 @@ export default function Subscription() {
 
   return (
     <>
-      <PageHead title="Subscription" subtitle="Manage your plan, payments and invoices." />
+      <PageHead title="Subscription" subtitle="Manage your plan, payments and payment receipts." />
       {msg && <Notice tone={msg[0]}>{msg[1]}</Notice>}
       <div className="tn-grid tn-grid-2-1" style={{ marginBottom: 14, alignItems: 'stretch' }}>
         <div className="tn-grid">
@@ -92,17 +93,23 @@ export default function Subscription() {
           ))}
         </div>
         <div className="tn-card dark">
-          <h2>WhatsApp community</h2>
-          <p className="tn-small" style={{ margin: '0 0 14px', lineHeight: 1.6 }}>
-            Daily tasks and updates from your community.
-            {d.member?.whatsapp_joined_at ? ` You joined on ${fmtDate(d.member.whatsapp_joined_at)}.` : ''}
-          </p>
-          <WhatsAppButton className="tn-btn green" />
+          <h2>WhatsApp communities</h2>
+          <p className="tn-small" style={{ margin: '0 0 6px', lineHeight: 1.6 }}>Daily tasks and updates from your community.</p>
+          {d.owned.map((p) => {
+            const joined = d.platforms[p]?.whatsapp_joined_at
+            return (
+              <div key={p} style={{ padding: '12px 0', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{PLATFORM_COMMUNITY[p]}</div>
+                <div className="tn-small" style={{ marginBottom: 10 }}>{joined ? `You joined on ${fmtDate(joined)}.` : 'Not joined yet.'}</div>
+                <WhatsAppButton className="tn-btn green small" platform={p} />
+              </div>
+            )
+          })}
         </div>
       </div>
 
       <div className="tn-card">
-        <h2>Invoices</h2>
+        <h2>Payment receipts</h2>
         {!billing ? <p className="tn-loading" style={{ padding: 0 }}>Loading…</p> : billing.payments.length === 0 ? <p className="tn-small">No payments yet.</p> : (
           <div className="tn-table-wrap">
             <table className="tn-table">
@@ -118,7 +125,7 @@ export default function Subscription() {
                       <td>{fmtAmount(p.amount, p.currency)}</td>
                       <td><span className={`tn-badge ${cls}`}>{label}</span></td>
                       <td>{p.hasInvoice && p.status === 'captured' && (
-                        <button className="tn-link" disabled={busy === p.id} onClick={() => openInvoice(p.id)}>{busy === p.id ? 'Opening…' : 'Download invoice'}</button>
+                        <button className="tn-link" disabled={busy === p.id} onClick={() => openInvoice(p.id)}>{busy === p.id ? 'Opening…' : 'Download receipt'}</button>
                       )}</td>
                     </tr>
                   )

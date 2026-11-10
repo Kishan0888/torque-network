@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { Link } from '../../lib/router'
 import { useDash, usePlatformData, PageHead, Notice } from '../DashboardApp'
-import { CATEGORIES, SUMMARY_MAX, normalizePostUrl, PLATFORM_LABEL } from '../../../shared/memberConfig.js'
+import { CATEGORIES, SUMMARY_MAX, normalizePostUrl, PLATFORM_LABEL, PLATFORM_FEATURES, cleanCategory } from '../../../shared/memberConfig.js'
+
+const OWN = '__own__'
 
 export default function Submit() {
   const d = useDash()
   const { data: home, reload } = usePlatformData('home')
   const li = d.platform === 'linkedin'
-  const [form, setForm] = useState({ url: '', category: '', topic: '', summary: '' })
+  const details = PLATFORM_FEATURES[d.platform].postDetails
+  const [form, setForm] = useState({ url: '', category: '', ownCategory: '', topic: '', summary: '' })
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
@@ -21,12 +24,19 @@ export default function Submit() {
     e.preventDefault()
     setMsg(null)
     if (!normalizePostUrl(d.platform, form.url)) return setMsg(['error', li ? 'Paste the link of a published LinkedIn post.' : 'Paste the link of a published Instagram post or reel.'])
-    if (!form.category) return setMsg(['error', 'Choose a category.'])
-    if (!form.summary.trim()) return setMsg(['error', 'Add a one-line summary.'])
+    const category = form.category === OWN ? form.ownCategory : form.category
+    if (details) {
+      if (!category) return setMsg(['error', form.category === OWN ? 'Type your category.' : 'Choose a category.'])
+      if (!cleanCategory(d.platform, category)) return setMsg(['error', 'Use 2–40 letters or numbers for your category.'])
+      if (!form.summary.trim()) return setMsg(['error', 'Add a one-line summary.'])
+    }
     setBusy(true)
     try {
-      await apiFetch('/api/dashboard?action=submit', { method: 'POST', body: { platform: d.platform, ...form, topic: form.topic || null } })
-      setForm({ url: '', category: '', topic: '', summary: '' })
+      const body = details
+        ? { platform: d.platform, url: form.url, category, topic: form.topic || null, summary: form.summary }
+        : { platform: d.platform, url: form.url }
+      await apiFetch('/api/dashboard?action=submit', { method: 'POST', body })
+      setForm({ url: '', category: '', ownCategory: '', topic: '', summary: '' })
       setMsg(['success', 'Submitted for review. You’ll see its status in My posts.'])
       reload()
     } catch (err) {
@@ -48,12 +58,18 @@ export default function Submit() {
               placeholder={li ? 'https://www.linkedin.com/posts/your-name_topic-activity-…' : 'https://www.instagram.com/reel/…'} />
             {!urlOk && <div className="tn-count over" style={{ textAlign: 'left' }}>{li ? 'Use the link to a published post (Copy link to post on LinkedIn).' : 'Use the link to a published post or reel.'}</div>}
           </label>
+          {details && <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
             <label className="tn-field"><span>Category</span>
               <select className="tn-select" value={form.category} onChange={(e) => set({ category: e.target.value })} disabled={full}>
                 <option value="">Choose…</option>
                 {CATEGORIES[d.platform].map((c) => <option key={c}>{c}</option>)}
+                <option value={OWN}>+ Add your own category</option>
               </select>
+              {form.category === OWN && (
+                <input className="tn-input" style={{ marginTop: 8 }} maxLength={40} autoFocus value={form.ownCategory}
+                  onChange={(e) => set({ ownCategory: e.target.value })} placeholder="e.g. Product launch" disabled={full} />
+              )}
             </label>
             <label className="tn-field"><span>Topic (optional)</span>
               <select className="tn-select" value={form.topic} onChange={(e) => set({ topic: e.target.value })} disabled={full}>
@@ -67,9 +83,10 @@ export default function Submit() {
               placeholder={li ? 'A failed campaign taught me more than any successful one. Here are 3 lessons.' : 'I tried 5 street-food spots in Old Delhi — here’s the one worth the queue.'} />
             <div className={`tn-count ${form.summary.length > SUMMARY_MAX ? 'over' : ''}`}>{form.summary.length} / {SUMMARY_MAX}</div>
           </label>
+          </>}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <span className="tn-small">{used} of {limit} submissions used this week</span>
-            <button className="tn-btn gold" type="submit" disabled={busy || full}>{busy ? 'Submitting…' : 'Submit for review'}</button>
+            <button className="tn-btn gold" type="submit" disabled={busy || full}>{busy ? 'Submitting…' : 'Submit Your Post'}</button>
           </div>
         </form>
         <div className="tn-grid">

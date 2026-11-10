@@ -4,7 +4,33 @@
  * Plain data + pure functions only.
  */
 
-export const WHATSAPP_COMMUNITY_URL = 'https://chat.whatsapp.com/D70kr3FVW8TL3EI0E9c6aR'
+// One WhatsApp community per product. Empty = link not shared yet (button shows "coming soon").
+export const WHATSAPP_COMMUNITY_URLS = {
+  instagram: 'https://chat.whatsapp.com/D70kr3FVW8TL3EI0E9c6aR',
+  linkedin: '',
+}
+
+// What each product's dashboard includes. Instagram members submit just a link;
+// Growth Playbook and Monthly guide are LinkedIn-only.
+export const PLATFORM_FEATURES = {
+  linkedin: { postDetails: true, playbook: true, guide: true },
+  instagram: { postDetails: false, playbook: false, guide: false },
+}
+
+/** Display line for a post: its summary, or "Instagram reel/post" for link-only Instagram posts. */
+export function postTitle(post) {
+  if (post?.summary) return post.summary
+  return /\/reels?\//i.test(post?.url || '') ? 'Instagram reel' : 'Instagram post'
+}
+
+/** LinkedIn category: one from the list, or the member's own (2–40 chars). */
+export function cleanCategory(platform, value) {
+  const v = String(value ?? '').trim().replace(/\s+/g, ' ')
+  if (!v) return null
+  if (CATEGORIES[platform]?.includes(v)) return v
+  if (v.length < 2 || v.length > 40 || !/^[\p{L}\p{N}][\p{L}\p{N} &/'+.,-]*$/u.test(v)) return null
+  return v
+}
 export const WEEKLY_POST_LIMIT = 2
 export const SUMMARY_MAX = 140
 
