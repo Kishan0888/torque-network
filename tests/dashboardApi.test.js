@@ -33,9 +33,11 @@ function from(name) {
       rows.push(row); data = [row]
     } else if (op === 'upsert') {
       const keys = (opts.onConflict || 'id').split(',')
-      let row = rows.find((r) => keys.every((k) => r[k] === payload[k]))
-      if (row) Object.assign(row, payload); else { row = { ...payload }; rows.push(row) }
-      data = [row]
+      data = (Array.isArray(payload) ? payload : [payload]).map((p) => {
+        let row = rows.find((r) => keys.every((k) => r[k] === p[k]))
+        if (row) Object.assign(row, p); else { row = { ...p }; rows.push(row) }
+        return row
+      })
     } else if (op === 'update') {
       data = match(); data.forEach((r) => Object.assign(r, payload))
     } else if (op === 'delete') {
@@ -51,7 +53,16 @@ function from(name) {
   }
   return api
 }
-vi.mock('../api/_lib/supabaseAdmin.js', () => ({ supabaseAdmin: () => ({ from, auth: { admin: { listUsers: async () => ({ data: { users: [] } }) } } }) }))
+const EMAILS = { u1: 'priya@example.com', u2: 'rohan@example.com', u3: 'free@example.com' }
+// public.complimentary_products(): free access by confirmed email, not expired.
+const rpc = async (fn, args) => {
+  if (fn !== 'complimentary_products') return { data: null, error: null }
+  const email = EMAILS[args.p_user_id]
+  const rows = (tables.complimentary_access || []).filter((c) => c.email === email && (!c.expires_at || c.expires_at > new Date().toISOString()))
+  return { data: rows.map((c) => ({ product: c.product, expires_at: c.expires_at || null })), error: null }
+}
+const listUsers = async () => ({ data: { users: Object.entries(EMAILS).map(([id, email]) => ({ id, email, email_confirmed_at: '2026-11-01T00:00:00Z', last_sign_in_at: null })) } })
+vi.mock('../api/_lib/supabaseAdmin.js', () => ({ supabaseAdmin: () => ({ from, rpc, auth: { admin: { listUsers } } }) }))
 
 let currentUser
 vi.mock('../api/_lib/auth.js', () => ({ requireUser: async () => currentUser }))
@@ -72,7 +83,7 @@ const subscribe = (userId, plan) => tables.subscriptions.push({ user_id: userId,
 
 beforeEach(() => {
   for (const k of Object.keys(tables)) delete tables[k]
-  Object.assign(tables, { subscriptions: [], profiles: [{ id: 'u1', full_name: 'Priya Sharma' }, { id: 'u2', full_name: 'Rohan Mehta' }], member_platforms: [], member_profiles: [], member_posts: [], post_engagements: [], admins: [], resources: [], monthly_guides: [], payments: [] })
+  Object.assign(tables, { complimentary_access: [], subscriptions: [], profiles: [{ id: 'u1', full_name: 'Priya Sharma' }, { id: 'u2', full_name: 'Rohan Mehta' }], member_platforms: [], member_profiles: [], member_posts: [], post_engagements: [], admins: [], resources: [], monthly_guides: [], payments: [] })
   currentUser = { id: 'u1', email: 'priya@example.com', identities: [] }
 })
 
@@ -214,6 +225,53 @@ describe('client feedback: Instagram link-only posts, own categories, engagement
     expect(rows.linkedin).toBeFalsy()
     expect((await call(dash, 'GET', 'resources', null, '&platform=instagram')).body.resources).toEqual([])
     expect((await call(dash, 'GET', 'resources', null, '&platform=linkedin')).body.resources).toHaveLength(1)
+  })
+})
+
+describe('free (complimentary) access', () => {
+  it('pulls clean, de-duplicated emails out of pasted text or a CSV', () => {
+    const csv = 'Name,Phone,Email\nVinay,9.18E+11,KVinay01362@Gmail.com\n"Rashmi, R",91700,ranjan.p88@gmail.com\nDup,1,kvinay01362@gmail.com\nBad,2,not-an-email\n'
+    expect(admin.parseEmails(csv)).toEqual(['kvinay01362@gmail.com', 'ranjan.p88@gmail.com'])
+    expect(admin.parseEmails('a@x.com; b@y.co, <c@z.in>')).toEqual(['a@x.com', 'b@y.co', 'c@z.in'])
+  })
+
+  it('admin adds emails → that person gets the product with no payment; expired or other-product entries do not count', async () => {
+    tables.admins.push({ user_id: 'u1' })
+    // Not admin → refused
+    currentUser = { id: 'u3', email: EMAILS.u3, identities: [] }
+    expect((await call(admin, 'POST', 'free-access-add', { emails: 'x@y.com', product: 'linkedin' })).status).toBe(403)
+    expect((await call(dash, 'GET', 'bootstrap')).body.memberships).toEqual({ linkedin: false, instagram: false })
+
+    currentUser = { id: 'u1', email: EMAILS.u1, identities: [] }
+    expect((await call(admin, 'POST', 'free-access-add', { emails: 'nothing here', product: 'linkedin' })).status).toBe(400)
+    expect((await call(admin, 'POST', 'free-access-add', { emails: 'a@b.com', product: 'tiktok' })).status).toBe(400)
+    const r = await call(admin, 'POST', 'free-access-add', { emails: 'FREE@example.com, someone@else.com', product: 'linkedin', note: 'Meta lead ad' })
+    expect(r.body.added).toBe(2)
+    expect(tables.complimentary_access.map((c) => c.email).sort()).toEqual(['free@example.com', 'someone@else.com'])
+
+    const list = await call(admin, 'GET', 'free-access')
+    const byEmail = Object.fromEntries(list.body.access.map((a) => [a.email, a]))
+    expect(byEmail['free@example.com'].account).toBe('active')
+    expect(byEmail['someone@else.com'].account).toBe('not_signed_up')
+
+    currentUser = { id: 'u3', email: EMAILS.u3, identities: [] }
+    const boot = await call(dash, 'GET', 'bootstrap')
+    expect(boot.body.memberships).toEqual({ linkedin: true, instagram: false })
+    expect(boot.body.complimentary).toEqual({ linkedin: { expires_at: null } })
+    expect((await call(dash, 'GET', 'home', null, '&platform=linkedin')).status).toBe(200)
+    expect((await call(dash, 'GET', 'home', null, '&platform=instagram')).status).toBe(402)
+
+    // End date in the past → access ends.
+    currentUser = { id: 'u1', email: EMAILS.u1, identities: [] }
+    expect((await call(admin, 'POST', 'free-access-update', { email: 'free@example.com', product: 'linkedin', expires_at: '2026-01-01' })).status).toBe(200)
+    currentUser = { id: 'u3', email: EMAILS.u3, identities: [] }
+    expect((await call(dash, 'GET', 'bootstrap')).body.memberships.linkedin).toBe(false)
+
+    // Removed → gone.
+    currentUser = { id: 'u1', email: EMAILS.u1, identities: [] }
+    await call(admin, 'POST', 'free-access-update', { email: 'free@example.com', product: 'linkedin', expires_at: null })
+    expect((await call(admin, 'POST', 'free-access-remove', { email: 'free@example.com', product: 'linkedin' })).status).toBe(200)
+    expect(tables.complimentary_access.map((c) => c.email)).toEqual(['someone@else.com'])
   })
 })
 

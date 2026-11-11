@@ -57,6 +57,7 @@ async function bootstrap(user) {
   return {
     user: { id: user.id, email: user.email, name: displayName(profileRes.data, user) },
     memberships: { linkedin: ent.linkedin, instagram: ent.instagram },
+    complimentary: ent.complimentary || {}, // { linkedin: { expires_at } } when access is free
     subscriptions: ent.rows.map(({ razorpay_plan_id: _p, razorpay_subscription_id: _s, ...rest }) => rest),
     member: memberRes.data || null,
     platforms,

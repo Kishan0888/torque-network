@@ -13,6 +13,10 @@
  * GET  members
  * GET  leads      ?status=
  * POST lead-status { id, status }
+ * GET  free-access                 — complimentary access list + whether each person has signed up
+ * POST free-access-add    { emails: "a@x.com, b@y.com…", product, expires_at?: "YYYY-MM-DD", note? }
+ * POST free-access-update { email, product, expires_at: "YYYY-MM-DD" | null }
+ * POST free-access-remove { email, product }
  */
 import { handle, json, HttpError, readOptionalJson } from './_lib/http.js'
 import { requireUser } from './_lib/auth.js'
@@ -140,11 +144,89 @@ async function members() {
     const ent = await entitlements(p.id)
     return {
       id: p.id, name: p.full_name, email: emails[p.id] || null, phone: p.phone, joined: p.created_at,
-      linkedin: ent.linkedin, instagram: ent.instagram,
+      linkedin: ent.linkedin, instagram: ent.instagram, free: ent.complimentary || {},
       platforms: platsBy[p.id] || [], whatsapp_joined_at: memBy[p.id]?.whatsapp_joined_at || null,
     }
   }))
   return { members: rows }
+}
+
+// ── Free (complimentary) access ────────────────────────────────────────────
+const EMAIL = /^[^\s@,;<>]{1,64}@[^\s@,;<>]{1,190}\.[^\s@,;<>]{2,}$/
+
+/** Pull every email address out of pasted text / CSV (exported for tests). */
+export function parseEmails(text) {
+  const found = String(text || '').toLowerCase().match(/[^\s@,;<>"'()]+@[^\s@,;<>"'()]+\.[^\s@,;<>"'()]{2,}/g) || []
+  return [...new Set(found.map((e) => e.replace(/[.]+$/, '')).filter((e) => EMAIL.test(e)))]
+}
+
+function endOfDayIST(date) {
+  if (date == null || date === '') return null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new HttpError(400, 'Choose a valid end date.')
+  return new Date(`${date}T23:59:59+05:30`).toISOString()
+}
+
+async function usersByEmail() {
+  const out = {}
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await db().auth.admin.listUsers({ page, perPage: 1000 })
+    if (error) throw error
+    const users = data?.users || []
+    for (const u of users) if (u.email) out[u.email.toLowerCase()] = u
+    if (users.length < 1000) break
+  }
+  return out
+}
+
+async function freeAccess() {
+  const [{ data, error }, users] = await Promise.all([
+    db().from('complimentary_access').select('*').order('created_at', { ascending: false }).limit(5000),
+    usersByEmail(),
+  ])
+  if (error) throw error
+  const now = new Date().toISOString()
+  return {
+    access: data.map((r) => {
+      const u = users[r.email]
+      return {
+        ...r,
+        expired: Boolean(r.expires_at && r.expires_at <= now),
+        account: u ? (u.email_confirmed_at ? 'active' : 'unconfirmed') : 'not_signed_up',
+        last_sign_in_at: u?.last_sign_in_at || null,
+      }
+    }),
+  }
+}
+
+async function freeAccessAdd(admin, body) {
+  if (!PLATFORMS.includes(body.product)) throw new HttpError(400, 'Choose a product.')
+  const emails = parseEmails(body.emails)
+  if (!emails.length) throw new HttpError(400, 'Paste at least one email address.')
+  if (emails.length > 2000) throw new HttpError(400, 'Add at most 2,000 emails at a time.')
+  const expires_at = endOfDayIST(body.expires_at)
+  const rows = emails.map((email) => ({ email, product: body.product, expires_at, note: str(body.note, 200), source: 'admin', created_by: admin.id }))
+  const { error } = await db().from('complimentary_access').upsert(rows, { onConflict: 'email,product' })
+  if (error) throw error
+  return { added: emails.length }
+}
+
+async function freeAccessUpdate(body) {
+  if (!PLATFORMS.includes(body.product)) throw new HttpError(400, 'Choose a product.')
+  const email = parseEmails(body.email)[0]
+  if (!email) throw new HttpError(400, 'Missing email.')
+  const { data, error } = await db().from('complimentary_access').update({ expires_at: endOfDayIST(body.expires_at) })
+    .eq('email', email).eq('product', body.product).select('*').single()
+  if (error) throw error
+  return { row: data }
+}
+
+async function freeAccessRemove(body) {
+  if (!PLATFORMS.includes(body.product)) throw new HttpError(400, 'Choose a product.')
+  const email = parseEmails(body.email)[0]
+  if (!email) throw new HttpError(400, 'Missing email.')
+  const { error } = await db().from('complimentary_access').delete().eq('email', email).eq('product', body.product)
+  if (error) throw error
+  return { removed: true }
 }
 
 const LEAD_STATUSES = ['new', 'contacted', 'converted', 'not_interested']
@@ -174,6 +256,7 @@ export const GET = handle(async (request) => {
     case 'guides': return json(await guides(url))
     case 'members': return json(await members())
     case 'leads': return json(await leads(url))
+    case 'free-access': return json(await freeAccess())
     default: throw new HttpError(404, 'Unknown action.')
   }
 })
@@ -190,6 +273,9 @@ export const POST = handle(async (request) => {
     case 'guide': return json(await saveGuide(body))
     case 'guide-delete': return json(await deleteRow('monthly_guides', body.id))
     case 'lead-status': return json(await leadStatus(body))
+    case 'free-access-add': return json(await freeAccessAdd(user, body))
+    case 'free-access-update': return json(await freeAccessUpdate(body))
+    case 'free-access-remove': return json(await freeAccessRemove(body))
     default: throw new HttpError(404, 'Unknown action.')
   }
 })

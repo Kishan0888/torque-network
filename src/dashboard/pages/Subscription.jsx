@@ -61,7 +61,7 @@ export default function Subscription() {
       {msg && <Notice tone={msg[0]}>{msg[1]}</Notice>}
       <div className="tn-grid tn-grid-2-1" style={{ marginBottom: 14, alignItems: 'stretch' }}>
         <div className="tn-grid">
-          {PLANS.filter((p) => latest(p.key)).map((plan) => {
+          {PLANS.filter((p) => latest(p.key) && !(d.complimentary?.[p.key] && !IN_PROGRESS.includes(latest(p.key).status))).map((plan) => {
             const sub = latest(plan.key)
             const [label, tone] = STATUS_COPY[sub.status] || [sub.status, 'neutral']
             const canCancel = IN_PROGRESS.includes(sub.status) && !sub.cancel_at_cycle_end
@@ -82,6 +82,19 @@ export default function Subscription() {
                   {!IN_PROGRESS.includes(sub.status) && <Link to={`/checkout?plan=${plan.key}`} className="tn-btn gold small">Subscribe again</Link>}
                   {canCancel && <button className="tn-btn danger small" disabled={busy === plan.key} onClick={() => cancel(plan, sub)}>Cancel subscription</button>}
                 </div>
+              </div>
+            )
+          })}
+          {PLANS.filter((p) => d.complimentary?.[p.key] && !(latest(p.key) && IN_PROGRESS.includes(latest(p.key).status))).map((plan) => {
+            const until = d.complimentary[plan.key].expires_at
+            return (
+              <div key={`free-${plan.key}`} className="tn-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <h2 style={{ margin: 0 }}>Your plan</h2>
+                  <span className="tn-badge active">Complimentary</span>
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 800, margin: '8px 0 2px' }}>{plan.eyebrow} · Free</div>
+                <div className="tn-small">{until ? `Free access until ${fmtDate(until)}` : 'Free access from the Torque Network team'} · No payment needed</div>
               </div>
             )
           })}

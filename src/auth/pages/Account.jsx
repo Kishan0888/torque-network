@@ -182,7 +182,10 @@ function MembershipCard({ plan, state, busyProduct, onCancel }) {
   const canCancel = sub && IN_PROGRESS.includes(sub.status) && !sub.cancel_at_cycle_end
   const canRenew = canPurchase(state) // e.g. halted / expired: start a new subscription via checkout
 
-  const statusLines = sub ? [
+  // Free access (granted by the team) — shown instead of the price when there is no paid plan running.
+  const free = state.complimentary && !(sub && IN_PROGRESS.includes(sub.status)) ? state.complimentary : null
+
+  const statusLines = sub && !free ? [
     sub.current_end && (
       <div key="end">
         {sub.status === 'active' && !sub.cancel_at_cycle_end ? 'Renews on' : 'Access until'}{' '}
@@ -202,7 +205,7 @@ function MembershipCard({ plan, state, busyProduct, onCancel }) {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
         <h3 id={headingId} style={{ ...h2, fontSize: 18, marginBottom: 0 }}>{plan.eyebrow}</h3>
-        {sub && <Badge tone={statusTone}>{statusLabel}</Badge>}
+        {free ? <Badge tone="success">Complimentary</Badge> : sub && <Badge tone={statusTone}>{statusLabel}</Badge>}
       </div>
 
       <div style={productRow} className="member-product">
@@ -210,11 +213,13 @@ function MembershipCard({ plan, state, busyProduct, onCancel }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={eyebrowText}>Torque Network</div>
           <div style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', fontFamily: 'Space Grotesk' }}>{plan.name}</div>
-          <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>Monthly membership · Renews automatically</div>
+          <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 2 }}>
+            {free ? 'Complimentary access · No payment needed' : 'Monthly membership · Renews automatically'}
+          </div>
         </div>
         <div style={{ textAlign: 'right' }} className="member-price">
-          <div style={priceText}>{plan.price}</div>
-          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>per month</div>
+          <div style={priceText}>{free ? 'Free' : plan.price}</div>
+          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{free ? (free.expires_at ? `until ${fmtDate(free.expires_at)}` : 'from the Torque team') : 'per month'}</div>
         </div>
       </div>
 

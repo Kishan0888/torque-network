@@ -12,7 +12,7 @@ import { requireUser, isEntitled } from '../_lib/auth.js'
 import { supabaseAdmin } from '../_lib/supabaseAdmin.js'
 import { productForPlanId, linkedinPlanIdOrNull, PRODUCTS } from '../_lib/env.js'
 import { rowGrantsAccess } from '../_lib/subscriptionState.js'
-import { isAdmin } from '../_lib/members.js'
+import { isAdmin, complimentary } from '../_lib/members.js'
 
 const PUBLIC_FIELDS = ['status', 'current_start', 'current_end', 'charge_at', 'ended_at', 'paid_count', 'cancel_at_cycle_end', 'created_at']
 
@@ -21,7 +21,7 @@ export const GET = handle(async (request) => {
   const linkedinPlanId = linkedinPlanIdOrNull()
 
   // Both lookups run concurrently.
-  const [{ data: rows, error }, entitled, admin] = await Promise.all([
+  const [{ data: rows, error }, entitled, admin, comp] = await Promise.all([
     supabaseAdmin()
       .from('subscriptions')
       .select(['razorpay_plan_id', ...PUBLIC_FIELDS].join(', '))
@@ -30,6 +30,7 @@ export const GET = handle(async (request) => {
       .order('created_at', { ascending: false }),
     isEntitled(user.id),
     isAdmin(user.id).catch(() => false),
+    complimentary(user.id),
   ])
   if (error) throw error
 
@@ -39,9 +40,10 @@ export const GET = handle(async (request) => {
     PRODUCTS.map((product) => {
       const mine = rows.filter((r) => productForPlanId(r.razorpay_plan_id, linkedinPlanId) === product)
       return [product, {
-        available: product === 'instagram' || Boolean(linkedinPlanId),
-        entitled: mine.some((r) => rowGrantsAccess(r)),
+        available: product === 'instagram' || Boolean(linkedinPlanId) || Boolean(comp[product]),
+        entitled: Boolean(comp[product]) || mine.some((r) => rowGrantsAccess(r)),
         subscription: publicView(mine[0]),
+        complimentary: comp[product] || null, // { expires_at } when access is free
       }]
     }),
   )

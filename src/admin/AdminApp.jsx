@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase'
 import '../dashboard/dashboard.css'
 import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId, postTitle } from '../../shared/memberConfig.js'
 
-const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['members', 'Members']]
+const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['members', 'Members'], ['free', 'Free access']]
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '—')
 
 function useApi(path) {
@@ -59,6 +59,7 @@ export default function AdminApp() {
         {tab === 'guides' && <GuidesAdmin />}
         {tab === 'members' && <Members />}
         {tab === 'leads' && <Leads />}
+        {tab === 'free' && <FreeAccess />}
       </div></div>
     </div>
   )
@@ -341,6 +342,103 @@ function Leads() {
   )
 }
 
+// ── Free access ────────────────────────────────────────────────────────────
+const ACCOUNT_STATE = { active: ['active', 'Signed up'], unconfirmed: ['pending', 'Email not confirmed'], not_signed_up: ['neutral', 'Not signed up yet'] }
+const dateOnly = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'No end date')
+
+function FreeAccess() {
+  const { data, error, reload } = useApi('/api/admin?action=free-access')
+  const [form, setForm] = useState({ emails: '', product: 'linkedin', expires_at: '', note: '' })
+  const [msg, setMsg] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [q, setQ] = useState('')
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }))
+
+  async function add(e) {
+    e.preventDefault()
+    setBusy(true); setMsg(null)
+    try {
+      const r = await apiFetch('/api/admin?action=free-access-add', { method: 'POST', body: { ...form, expires_at: form.expires_at || null } })
+      setMsg(['success', `${r.added} email${r.added === 1 ? '' : 's'} now have free ${PLATFORM_LABEL[form.product]} access.`])
+      set({ emails: '' }); reload()
+    } catch (err) { setMsg(['error', err.message]) } finally { setBusy(false) }
+  }
+  async function act(action, row, extra = {}) {
+    if (action === 'free-access-remove' && !window.confirm(`Remove free ${PLATFORM_LABEL[row.product]} access for ${row.email}?`)) return
+    try { await apiFetch(`/api/admin?action=${action}`, { method: 'POST', body: { email: row.email, product: row.product, ...extra } }); reload() } catch (err) { setMsg(['error', err.message]) }
+  }
+  async function loadFile(file) {
+    if (!file) return
+    const text = await file.text()
+    set({ emails: (form.emails ? form.emails + '\n' : '') + text })
+  }
+
+  const rows = (data?.access || []).filter((r) => !q || r.email.includes(q.toLowerCase().trim()))
+  const signedUp = (data?.access || []).filter((r) => r.account === 'active').length
+
+  return (
+    <>
+      <form className="tn-card" onSubmit={add} style={{ marginBottom: 14 }}>
+        <h2>Give free access</h2>
+        <p className="tn-small" style={{ marginTop: -4 }}>
+          Paste emails (any format: one per line, comma-separated, or a whole CSV) or upload the CSV file. When someone signs up and confirms one of these emails,
+          they go straight to the member dashboard with no payment.
+        </p>
+        <textarea className="tn-input" rows={5} value={form.emails} onChange={(e) => set({ emails: e.target.value })} placeholder={'priya@example.com\nrohan@example.com'} style={{ fontFamily: 'inherit' }} />
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', marginTop: 10 }}>
+          <label className="tn-small" style={{ display: 'grid', gap: 4 }}>Upload CSV
+            <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={(e) => loadFile(e.target.files?.[0])} />
+          </label>
+          <label className="tn-small" style={{ display: 'grid', gap: 4 }}>Product
+            <select className="tn-select" style={{ width: 'auto' }} value={form.product} onChange={(e) => set({ product: e.target.value })}>
+              {PLATFORMS.map((p) => <option key={p} value={p}>{PLATFORM_LABEL[p]}</option>)}
+            </select>
+          </label>
+          <label className="tn-small" style={{ display: 'grid', gap: 4 }}>Free until (optional)
+            <input className="tn-input" type="date" value={form.expires_at} onChange={(e) => set({ expires_at: e.target.value })} style={{ width: 'auto' }} />
+          </label>
+          <label className="tn-small" style={{ display: 'grid', gap: 4, flex: '1 1 200px' }}>Note (optional)
+            <input className="tn-input" value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder="e.g. Meta lead ad, Nov 2026" maxLength={200} />
+          </label>
+          <button className="tn-btn gold" disabled={busy || !form.emails.trim()}>{busy ? 'Saving…' : 'Give free access'}</button>
+        </div>
+        {msg && <div className={`tn-notice ${msg[0]}`} style={{ marginTop: 12, marginBottom: 0 }}>{msg[1]}</div>}
+      </form>
+
+      <div className="tn-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10, alignItems: 'center' }}>
+          <h2 style={{ margin: 0 }}>Free access list {data && <span className="tn-small">({data.access.length} · {signedUp} signed up)</span>}</h2>
+          <input className="tn-input" style={{ width: 240 }} placeholder="Search email" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        {error && <div className="tn-notice error">{error}</div>}
+        {!data ? <p className="tn-loading">Loading…</p> : rows.length === 0 ? <p className="tn-small">No one on the list yet.</p> : (
+          <div className="tn-table-wrap"><table className="tn-table">
+            <thead><tr><th>Email</th><th>Product</th><th>Free until</th><th>Account</th><th>Note</th><th></th></tr></thead>
+            <tbody>{rows.map((r) => {
+              const [tone, label] = ACCOUNT_STATE[r.account] || ['neutral', r.account]
+              return (
+                <tr key={`${r.email}-${r.product}`}>
+                  <td style={{ fontWeight: 600 }}>{r.email}</td>
+                  <td>{PLATFORM_LABEL[r.product]}</td>
+                  <td className="tn-small" style={{ whiteSpace: 'nowrap' }}>
+                    {r.expired ? <span className="tn-badge failed">Ended {dateOnly(r.expires_at)}</span> : dateOnly(r.expires_at)}
+                    <div><input type="date" aria-label={`Change end date for ${r.email}`} className="tn-input" style={{ padding: '4px 6px', fontSize: 12, width: 'auto', marginTop: 4 }}
+                      value={r.expires_at ? new Date(r.expires_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : ''}
+                      onChange={(e) => act('free-access-update', r, { expires_at: e.target.value || null })} /></div>
+                  </td>
+                  <td><span className={`tn-badge ${tone}`} style={{ whiteSpace: 'nowrap' }}>{label}</span>{r.last_sign_in_at && <div className="tn-small">Last login {fmt(r.last_sign_in_at)}</div>}</td>
+                  <td className="tn-small">{r.note || r.source || '—'}</td>
+                  <td><button type="button" className="tn-link" style={{ color: '#b42318' }} onClick={() => act('free-access-remove', r)}>Remove</button></td>
+                </tr>
+              )
+            })}</tbody>
+          </table></div>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ── Members ────────────────────────────────────────────────────────────────
 function Members() {
   const { data, error } = useApi('/api/admin?action=members')
@@ -360,8 +458,8 @@ function Members() {
             <tr key={m.id}>
               <td><div style={{ fontWeight: 700 }}>{m.name || '—'}</div><div className="tn-small">{m.email}{m.phone ? ` · ${m.phone}` : ''}</div></td>
               <td>
-                {m.linkedin && <span className="tn-badge active" style={{ marginRight: 4 }}>LinkedIn</span>}
-                {m.instagram && <span className="tn-badge active">Instagram</span>}
+                {m.linkedin && <span className="tn-badge active" style={{ marginRight: 4 }}>LinkedIn{m.free?.linkedin ? ' · Free' : ''}</span>}
+                {m.instagram && <span className="tn-badge active">Instagram{m.free?.instagram ? ' · Free' : ''}</span>}
                 {!m.linkedin && !m.instagram && <span className="tn-badge neutral">None</span>}
               </td>
               <td className="tn-small">{m.platforms.length === 0 ? '—' : m.platforms.map((p) => (

@@ -8,6 +8,7 @@ import { supabaseAdmin } from './supabaseAdmin.js'
 import { razorpay, RazorpayError } from './razorpay.js'
 import { razorpayConfig, planIdForProduct, productForPlanId, linkedinPlanIdOrNull, SUBSCRIPTION_TOTAL_COUNT } from './env.js'
 import { syncSubscription } from './sync.js'
+import { complimentary } from './members.js'
 import { BLOCKING_STATUSES, subscriptionRowFromEntity, rowGrantsAccess } from './subscriptionState.js'
 
 /** @param {{ id: string, email?: string }} user  @param {'instagram'|'linkedin'} product  @param {object} [extraNotes] */
@@ -18,12 +19,13 @@ export async function startCheckout(user, product, extraNotes = {}) {
   const db = supabaseAdmin()
 
   // Independent lookups run concurrently.
-  const [subsResult, profileResult] = await Promise.all([
+  const [subsResult, profileResult, comp] = await Promise.all([
     db
       .from('subscriptions')
       .select('razorpay_subscription_id, razorpay_plan_id, status, current_end')
       .eq('user_id', user.id),
     db.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle(),
+    complimentary(user.id),
   ])
   if (subsResult.error) throw subsResult.error
   const profile = profileResult.data
@@ -31,8 +33,8 @@ export async function startCheckout(user, product, extraNotes = {}) {
   // Only this product's subscriptions matter (Instagram and LinkedIn are independent).
   const productRows = subsResult.data.filter((r) => productForPlanId(r.razorpay_plan_id, linkedinPlanId) === product)
 
-  // Same rule as public.is_entitled(), applied to this product only.
-  if (productRows.some((r) => rowGrantsAccess(r))) {
+  // Same rule as public.is_entitled(), applied to this product only (free access counts too).
+  if (comp[product] || productRows.some((r) => rowGrantsAccess(r))) {
     throw new HttpError(409, 'You already have an active membership.', { code: 'already_member' })
   }
   const rows = productRows.filter((r) => [...BLOCKING_STATUSES, 'created', 'halted'].includes(r.status))

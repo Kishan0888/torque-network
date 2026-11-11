@@ -4,20 +4,33 @@ import { productForPlanId, linkedinPlanIdOrNull, PRODUCTS } from './env.js'
 import { rowGrantsAccess } from './subscriptionState.js'
 
 /**
+ * Free access granted by email in /admin → Free access (confirmed email, not expired):
+ *   { linkedin: { expires_at } } — only products the user gets for free.
+ */
+export async function complimentary(userId) {
+  const { data, error } = await supabaseAdmin().rpc('complimentary_products', { p_user_id: userId })
+  if (error) throw error
+  return Object.fromEntries((data || []).map((r) => [r.product, { expires_at: r.expires_at }]))
+}
+
+/**
  * Per-product membership for a user, using the same rules as
- * /api/subscriptions/me and public.is_entitled():
- *   { instagram: boolean, linkedin: boolean, rows: [...subscriptions] }
+ * /api/subscriptions/me and public.is_entitled() (paid subscription OR free access):
+ *   { instagram: boolean, linkedin: boolean, rows: [...subscriptions], complimentary: { linkedin: {...} } }
  */
 export async function entitlements(userId) {
-  const { data: rows, error } = await supabaseAdmin()
-    .from('subscriptions')
-    .select('razorpay_subscription_id, razorpay_plan_id, status, current_start, current_end, charge_at, cancel_at_cycle_end, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+  const [{ data: rows, error }, comp] = await Promise.all([
+    supabaseAdmin()
+      .from('subscriptions')
+      .select('razorpay_subscription_id, razorpay_plan_id, status, current_start, current_end, charge_at, cancel_at_cycle_end, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    complimentary(userId),
+  ])
   if (error) throw error
   const linkedinPlanId = linkedinPlanIdOrNull()
-  const result = { rows: rows.map((r) => ({ ...r, product: productForPlanId(r.razorpay_plan_id, linkedinPlanId) })) }
-  for (const product of PRODUCTS) result[product] = result.rows.some((r) => r.product === product && rowGrantsAccess(r))
+  const result = { rows: rows.map((r) => ({ ...r, product: productForPlanId(r.razorpay_plan_id, linkedinPlanId) })), complimentary: comp }
+  for (const product of PRODUCTS) result[product] = Boolean(comp[product]) || result.rows.some((r) => r.product === product && rowGrantsAccess(r))
   return result
 }
 

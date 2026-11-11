@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const state = { rows: [], fresh: {}, profile: { full_name: 'A', phone: '9999999999' }, inserted: [] }
+const state = { rows: [], fresh: {}, profile: { full_name: 'A', phone: '9999999999' }, inserted: [], free: [] }
 
 vi.mock('../api/_lib/auth.js', () => ({
   requireUser: async () => ({ id: 'user-1', email: 'a@example.com' }),
@@ -15,7 +15,7 @@ function table(name) {
   }
   return q
 }
-vi.mock('../api/_lib/supabaseAdmin.js', () => ({ supabaseAdmin: () => ({ from: (n) => table(n) }) }))
+vi.mock('../api/_lib/supabaseAdmin.js', () => ({ supabaseAdmin: () => ({ from: (n) => table(n), rpc: async () => ({ data: state.free, error: null }) }) }))
 
 const razorpay = { createSubscription: vi.fn(), cancelSubscription: vi.fn() }
 vi.mock('../api/_lib/razorpay.js', () => ({ razorpay, RazorpayError: class extends Error {} }))
@@ -37,7 +37,7 @@ const call = async (body) => {
 const future = new Date(Date.now() + 10 * 864e5).toISOString()
 
 beforeEach(() => {
-  Object.assign(state, { rows: [], fresh: {}, inserted: [] })
+  Object.assign(state, { rows: [], fresh: {}, inserted: [], free: [] })
   process.env.RAZORPAY_LINKEDIN_PLAN_ID = 'plan_LI'
   razorpay.createSubscription.mockReset().mockImplementation(async ({ plan_id }) => ({ id: `sub_new_${plan_id}`, plan_id, status: 'created' }))
   razorpay.cancelSubscription.mockReset().mockResolvedValue({})
@@ -134,6 +134,15 @@ describe('POST /api/subscriptions/create — LinkedIn (separate plan)', () => {
     state.rows = [{ razorpay_subscription_id: 'sub_li', razorpay_plan_id: 'plan_LI', status: 'active', current_end: future }]
     const { status } = await call({ product: 'linkedin' })
     expect(status).toBe(409)
+  })
+
+  it('free (complimentary) LinkedIn access: nothing to pay, Instagram can still be bought', async () => {
+    state.free = [{ product: 'linkedin', expires_at: null }]
+    const li = await call({ product: 'linkedin' })
+    expect(li.status).toBe(409)
+    expect(li.body.code).toBe('already_member')
+    expect(razorpay.createSubscription).not.toHaveBeenCalled()
+    expect((await call({ product: 'instagram' })).status).toBe(200)
   })
 
   it('returns 503 (not configured) when RAZORPAY_LINKEDIN_PLAN_ID is missing', async () => {

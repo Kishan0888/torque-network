@@ -23,7 +23,7 @@ function table() {
   }
   return q
 }
-vi.mock('../api/_lib/supabaseAdmin.js', () => ({ supabaseAdmin: () => ({ from: () => table() }) }))
+vi.mock('../api/_lib/supabaseAdmin.js', () => ({ supabaseAdmin: () => ({ from: () => table(), rpc: async () => ({ data: [], error: null }) }) }))
 
 const razorpay = { cancelSubscription: vi.fn() }
 vi.mock('../api/_lib/razorpay.js', () => ({ razorpay, RazorpayError: class extends Error {} }))
