@@ -63,7 +63,7 @@ const STEPS = [
 const STATS = [
   [Users, '9', 'Industry communities'],
   [CalendarDays, '2 posts', 'You can submit each week'],
-  [BookOpen, 'Monthly', 'Content guide for your domain'],
+  [BookOpen, 'Growth', 'Playbook videos'],
   [Loop, 'A stronger', 'Professional community'],
 ]
 

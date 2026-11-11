@@ -15,7 +15,7 @@ const MILESTONES = [
 
 const LI_MILESTONES = [
   { year:'Year 1', icon:Sprout, color:'#3B82F6', headline:'Build Your Presence.',
-    points:['Join your industry community and set up your profile','Post consistently with monthly topic guides','Genuine early engagement on every post you submit','Learn what your audience responds to','Make showing up on LinkedIn a habit'] },
+    points:['Join your industry community and set up your profile','Post consistently, with the Growth Playbook to guide you','Genuine early engagement on every post you submit','Learn what your audience responds to','Make showing up on LinkedIn a habit'] },
   { year:'Year 2', icon:Mic, color:'#22D3EE', headline:'Become the Go-To Voice.',
     points:['Your posts start conversations in your industry','Recruiters, clients and peers notice your work','Inbound messages and opportunities grow','Collaborate with members across industries','A profile that reflects your real expertise'] },
   { year:'Year 3+', icon:Crown, color:'#818CF8', headline:'Own Your Space.',

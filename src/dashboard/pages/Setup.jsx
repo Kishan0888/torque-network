@@ -94,7 +94,7 @@ export default function Setup() {
         {step === 2 && (
           <>
             <h1>Which {platform === 'linkedin' ? 'domain do you work in' : 'niche do you create in'}?</h1>
-            <p className="lead">We’ll place you with peers from your {platform === 'linkedin' ? 'industry' : 'niche'} and personalise your timeline, prompts and monthly guide.</p>
+            <p className="lead">We’ll place you with peers from your {platform === 'linkedin' ? 'industry' : 'niche'} and personalise your Member Posts feed.</p>
             <div className="tn-options">
               {Object.keys(DOMAINS[platform]).map((dom) => (
                 <button key={dom} type="button" className={`tn-option ${form.domain === dom ? 'on' : ''}`}

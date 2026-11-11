@@ -24,7 +24,7 @@ const ICONS = {
 
 const FEATURES = [
   { Icon: Users, title: 'Peers from your own industry', desc: 'You are matched with professionals in your domain, so the reactions and comments on your posts come from people who understand your work.' },
-  { Icon: PenLine, title: 'Never stare at a blank post again', desc: 'Every month you get a content guide for your industry with weekly themes and suggested topics, plus short videos on writing posts that land.' },
+  { Icon: PenLine, title: 'Learn what makes posts land', desc: 'The Growth Playbook gives you short videos on writing LinkedIn posts that start conversations, and your dashboard shows who engaged with each post.' },
   { Icon: TrendingUp, title: 'Credibility that compounds', desc: 'Post consistently, get genuine early engagement, and let LinkedIn show your work to more of the right people over time.' },
 ]
 

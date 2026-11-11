@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase'
 import '../dashboard/dashboard.css'
 import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId, postTitle } from '../../shared/memberConfig.js'
 
-const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['guides', 'Monthly guides'], ['members', 'Members']]
+const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['members', 'Members']]
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '—')
 
 function useApi(path) {

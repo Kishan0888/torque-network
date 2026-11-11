@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizePostUrl, normalizeProfile, weekStart, weekStreak, monthKey, dailyShuffle, youtubeId, DOMAINS } from '../shared/memberConfig.js'
-import { weeklyIdeas } from '../src/dashboard/ideas.js'
+import { normalizePostUrl, normalizeProfile, weekStart, weekStreak, monthKey, dailyShuffle, youtubeId, DOMAINS, PLATFORM_FEATURES, WHATSAPP_COMMUNITY_URLS } from '../shared/memberConfig.js'
 
 describe('post link validation', () => {
   it.each([
@@ -63,7 +62,7 @@ describe('weeks in India time (Monday start)', () => {
   })
 })
 
-describe('timeline shuffle and ideas', () => {
+describe('timeline shuffle and product settings', () => {
   it('is stable within a day, different across days, and keeps every post', () => {
     const items = Array.from({ length: 20 }, (_, i) => i)
     const a = dailyShuffle(items, 'u1:2026-11-05')
@@ -72,14 +71,12 @@ describe('timeline shuffle and ideas', () => {
     expect([...a].sort((x, y) => x - y)).toEqual(items)
   })
 
-  it('three ideas, refreshed on Monday, per platform', () => {
-    const thu = new Date('2026-11-05T10:00:00Z')
-    const fri = new Date('2026-11-06T10:00:00Z')
-    const nextMon = new Date('2026-11-09T04:00:00Z')
-    expect(weeklyIdeas('linkedin', 'Product', thu)).toHaveLength(3)
-    expect(weeklyIdeas('linkedin', 'Product', fri)).toEqual(weeklyIdeas('linkedin', 'Product', thu))
-    expect(weeklyIdeas('linkedin', 'Product', nextMon)).not.toEqual(weeklyIdeas('linkedin', 'Product', thu))
-    expect(weeklyIdeas('instagram', 'Travel', thu)[0].format).toMatch(/Reel|Carousel/)
+  it('Monthly guide is switched off; Growth Playbook is LinkedIn-only; one WhatsApp group per product', () => {
+    expect(PLATFORM_FEATURES.linkedin).toMatchObject({ playbook: true, guide: false })
+    expect(PLATFORM_FEATURES.instagram).toMatchObject({ playbook: false, guide: false })
+    expect(WHATSAPP_COMMUNITY_URLS.linkedin).toMatch(/^https:\/\/chat\.whatsapp\.com\//)
+    expect(WHATSAPP_COMMUNITY_URLS.instagram).toMatch(/^https:\/\/chat\.whatsapp\.com\//)
+    expect(WHATSAPP_COMMUNITY_URLS.linkedin).not.toBe(WHATSAPP_COMMUNITY_URLS.instagram)
   })
 
   it('every domain has topics', () => {

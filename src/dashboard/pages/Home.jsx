@@ -2,19 +2,14 @@ import { useState } from 'react'
 import { Link } from '../../lib/router'
 import { apiFetch } from '../../lib/api'
 import { useDash, usePlatformData, PageHead, Notice } from '../DashboardApp'
-import { weeklyIdeas } from '../ideas'
 import { CHECKLIST, PLATFORM_FEATURES } from '../../../shared/memberConfig.js'
-
-const NUM_COLORS = ['#f7b93e', '#f6ab92', '#bfd3f6']
 
 export default function Home() {
   const d = useDash()
   const { data, error, loading } = usePlatformData('home')
-  const [template, setTemplate] = useState(null)
   const first = (d.user.name || '').split(' ')[0]
   const hour = Number(new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' }))
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const ideas = weeklyIdeas(d.platform, d.setup?.domain)
   const monthName = new Date().toLocaleDateString('en-IN', { month: 'long', timeZone: 'Asia/Kolkata' })
 
   return (
@@ -52,25 +47,9 @@ export default function Home() {
             )}
           </div>
 
-          <div className="tn-grid tn-grid-2-1">
-            <div className="tn-card">
-              <h2>This week’s post ideas for {d.setup?.domain}</h2>
-              {ideas.map((idea, i) => (
-                <div key={idea.title} className="tn-row">
-                  <span className="tn-num" style={{ background: NUM_COLORS[i] }}>{i + 1}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800 }}>{idea.title}</div>
-                    <div className="tn-small">{idea.format}</div>
-                  </div>
-                  <button className="tn-btn small" onClick={() => setTemplate(idea)}>Use template</button>
-                </div>
-              ))}
-            </div>
-            <Checklist spotlight={data.spotlight} />
-          </div>
+          <Checklist spotlight={data.spotlight} />
         </>
       )}
-      {template && <TemplateModal idea={template} onClose={() => setTemplate(null)} />}
     </>
   )
 }
@@ -101,27 +80,6 @@ function Checklist({ spotlight }) {
           <a href={spotlight.url} target="_blank" rel="noopener noreferrer" className="tn-link">View ↗</a>
         </div>
       )}
-    </div>
-  )
-}
-
-function TemplateModal({ idea, onClose }) {
-  const d = useDash()
-  const [copied, setCopied] = useState(false)
-  const text = idea.template.replaceAll('[domain]', d.setup?.domain || '[domain]').replaceAll('[niche]', d.setup?.domain || '[niche]')
-  return (
-    <div className="tn-modal-bg" onClick={onClose}>
-      <div className="tn-modal" role="dialog" aria-modal="true" aria-label={idea.title} onClick={(e) => e.stopPropagation()}>
-        <div className="tn-modal-head"><h2>{idea.title}</h2><button className="tn-x" onClick={onClose} aria-label="Close">×</button></div>
-        <p className="tn-small" style={{ marginTop: -6, marginBottom: 10 }}>{idea.format}. Replace the [brackets] with your own details.</p>
-        <textarea className="tn-textarea" readOnly value={text} rows={12} style={{ fontSize: 13, lineHeight: 1.55 }} />
-        <div style={{ display: 'flex', gap: 10, marginTop: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <button className="tn-btn" onClick={async () => { try { await navigator.clipboard.writeText(text); setCopied(true) } catch { setCopied(false) } }}>
-            {copied ? 'Copied ✓' : 'Copy template'}
-          </button>
-          <Link to="/dashboard/submit" className="tn-btn gold">I’ve posted it — submit</Link>
-        </div>
-      </div>
     </div>
   )
 }

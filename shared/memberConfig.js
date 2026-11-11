@@ -7,13 +7,14 @@
 // One WhatsApp community per product. Empty = link not shared yet (button shows "coming soon").
 export const WHATSAPP_COMMUNITY_URLS = {
   instagram: 'https://chat.whatsapp.com/D70kr3FVW8TL3EI0E9c6aR',
-  linkedin: '',
+  linkedin: 'https://chat.whatsapp.com/HAfBNNkvXeb7F65qceGcB4',
 }
 
 // What each product's dashboard includes. Instagram members submit just a link;
-// Growth Playbook and Monthly guide are LinkedIn-only.
+// Growth Playbook is LinkedIn-only. Monthly guide is switched off for now (client request);
+// set guide: true to bring the page back.
 export const PLATFORM_FEATURES = {
-  linkedin: { postDetails: true, playbook: true, guide: true },
+  linkedin: { postDetails: true, playbook: true, guide: false },
   instagram: { postDetails: false, playbook: false, guide: false },
 }
 

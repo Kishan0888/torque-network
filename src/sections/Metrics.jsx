@@ -12,7 +12,7 @@ const METRICS = [
 const LI_METRICS = [
   { value:9,   prefix:'', suffix:'',        label:'Industry communities',         sub:'From HR to healthcare' },
   { value:2,   prefix:'', suffix:' / week', label:'Posts you can submit',          sub:'Reviewed by our team' },
-  { value:12,  prefix:'', suffix:'',        label:'Monthly content guides a year', sub:'Topics for your domain' },
+  { value:100, prefix:'', suffix:'%',       label:'Verified members',              sub:'Every profile checked by our team' },
   { value:500, prefix:'₹', suffix:'',       label:'Per month · LinkedIn plan',     sub:'Instagram plan ₹750/month' },
 ]
 

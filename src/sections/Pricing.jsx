@@ -34,7 +34,7 @@ const PLANS = [
       'Genuine reactions, comments and reposts from verified members',
       'Peers matched to your industry, across 9 industries',
       'Submit up to 2 LinkedIn posts a week to the network',
-      'A monthly content guide with topics for your domain',
+      'Growth Playbook videos on writing posts that land',
       'Private WhatsApp community and learning videos',
     ],
   },
