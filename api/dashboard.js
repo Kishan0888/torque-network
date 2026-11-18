@@ -17,12 +17,17 @@
  * GET  guides       ?platform=
  * GET  billing                           payments + invoice availability
  * GET  invoice      ?payment=pay_…       Razorpay invoice link for own payment
+ * GET  playbook-link ?id=<resource id>[&download=1]  short-lived signed link to a Growth Playbook PDF (members only)
+ * GET  playbook-file ?id=&exp=&sig=[&download=1]     the PDF itself; no login header needed, the signature is the proof
  */
+import crypto from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { handle, json, HttpError, readOptionalJson } from './_lib/http.js'
 import { requireUser } from './_lib/auth.js'
 import { supabaseAdmin } from './_lib/supabaseAdmin.js'
 import { entitlements, requirePlatform, isAdmin, displayName, linkedinIdentity } from './_lib/members.js'
-import { razorpayConfig } from './_lib/env.js'
+import { razorpayConfig, supabaseConfig } from './_lib/env.js'
 import {
   DOMAINS, EXPERIENCE, GOALS, CHECKLIST, PLATFORMS, WEEKLY_POST_LIMIT, SUMMARY_MAX,
   normalizePostUrl, normalizeProfile, weekStart, weekLabel, weekStreak, monthKey, dailyShuffle,
@@ -381,10 +386,66 @@ async function analytics(user, platform) {
 async function resources(user, platform) {
   await requirePlatform(user.id, platform)
   if (!PLATFORM_FEATURES[platform].playbook) return { resources: [] }
-  const { data, error } = await db().from('resources').select('id, title, youtube_url, duration, sort_order')
+  const { data, error } = await db().from('resources').select('id, title, youtube_url, pdf_file, duration, sort_order')
     .in('platform', ['all', platform]).eq('published', true).order('sort_order').order('created_at')
   if (error) throw error
-  return { resources: data }
+  // Never expose the file name; members open PDFs through playbook-pdf by id.
+  return { resources: data.map(({ pdf_file, ...r }) => ({ ...r, pdf: Boolean(pdf_file) })) }
+}
+
+// Growth Playbook PDFs ship with the site (content/playbook/, bundled into this
+// function via vercel.json includeFiles) and are served only to members.
+// Members ask for a signed link (playbook-link, needs login), then the browser opens
+// it like any URL (playbook-file), so the phone's / browser's own PDF viewer works.
+const PLAYBOOK_DIR = path.join(process.cwd(), 'content', 'playbook')
+const LINK_TTL_S = 5 * 60
+const UUID_RE = /^[0-9a-f-]{36}$/i
+const linkSig = (id, exp, userId) =>
+  crypto.createHmac('sha256', supabaseConfig().serviceRoleKey).update(`playbook:${id}:${exp}:${userId}`).digest('hex')
+
+async function playbookRow(id) {
+  if (!UUID_RE.test(id || '')) throw new HttpError(400, 'Missing file.')
+  const { data: r, error } = await db().from('resources').select('platform, title, pdf_file, published').eq('id', id).maybeSingle()
+  if (error) throw error
+  if (!r?.pdf_file || !r.published || !/^[a-z0-9][a-z0-9-]{0,100}\.pdf$/.test(r.pdf_file)) throw new HttpError(404, 'This file is no longer available.')
+  return r
+}
+
+async function playbookLink(user, id, download) {
+  const r = await playbookRow(id)
+  const ent = await entitlements(user.id)
+  const allowed = r.platform === 'all' ? PLATFORMS.filter((p) => PLATFORM_FEATURES[p].playbook) : [r.platform]
+  if (!allowed.some((p) => ent[p] && PLATFORM_FEATURES[p].playbook)) throw new HttpError(402, 'This playbook is part of your membership.', { code: 'no_membership' })
+  const exp = Math.floor(Date.now() / 1000) + LINK_TTL_S
+  const q = new URLSearchParams({ action: 'playbook-file', id, u: user.id, exp: String(exp), sig: linkSig(id, exp, user.id) })
+  if (download) q.set('download', '1')
+  return { url: `/api/dashboard?${q}` }
+}
+
+async function playbookFile(url) {
+  const id = url.searchParams.get('id') || ''
+  const userId = url.searchParams.get('u') || ''
+  const exp = Number(url.searchParams.get('exp'))
+  const sig = url.searchParams.get('sig') || ''
+  if (!UUID_RE.test(id) || !/^[0-9A-Za-z-]{1,64}$/.test(userId) || !Number.isInteger(exp) || !/^[0-9a-f]{64}$/.test(sig)) throw new HttpError(400, 'This link is not valid.')
+  if (exp < Date.now() / 1000) throw new HttpError(410, 'This link has expired. Go back to the Growth Playbook and open the file again.')
+  if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(linkSig(id, exp, userId), 'hex'))) throw new HttpError(403, 'This link is not valid.')
+  const r = await playbookRow(id)
+  let bytes
+  try { bytes = await readFile(path.join(PLAYBOOK_DIR, r.pdf_file)) } catch {
+    console.error('[playbook] missing file', r.pdf_file)
+    throw new HttpError(404, 'This file is no longer available.')
+  }
+  const name = `${r.title.replace(/[^A-Za-z0-9 .,&()-]+/g, '').trim().slice(0, 90) || 'Torque playbook'}.pdf`
+  return new Response(bytes, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `${url.searchParams.get('download') ? 'attachment' : 'inline'}; filename="${name}"`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  })
 }
 
 async function guides(user, platform) {
@@ -436,8 +497,10 @@ const platformParam = (url) => {
 }
 
 export const GET = handle(async (request) => {
-  const user = await requireUser(request)
   const url = new URL(request.url)
+  // Opened directly by the browser from a signed link (no login header).
+  if (url.searchParams.get('action') === 'playbook-file') return await playbookFile(url)
+  const user = await requireUser(request)
   switch (url.searchParams.get('action')) {
     case 'bootstrap': return json(await bootstrap(user))
     case 'home': return json(await home(user, platformParam(url)))
@@ -445,6 +508,7 @@ export const GET = handle(async (request) => {
     case 'analytics': return json(await analytics(user, platformParam(url)))
     case 'my-posts': return json(await myPosts(user, platformParam(url)))
     case 'resources': return json(await resources(user, platformParam(url)))
+    case 'playbook-link': return json(await playbookLink(user, url.searchParams.get('id'), url.searchParams.get('download') === '1'))
     case 'guides': return json(await guides(user, platformParam(url)))
     case 'billing': return json(await billing(user))
     case 'invoice': return json(await invoice(user, url.searchParams.get('payment')))

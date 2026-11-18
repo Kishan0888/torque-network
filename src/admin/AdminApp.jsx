@@ -148,7 +148,7 @@ function ResourcesAdmin() {
   return (
     <div className="tn-grid tn-grid-2-1" style={{ alignItems: 'start' }}>
       <div className="tn-card">
-        <h2>Playbook videos</h2>
+        <h2>Growth Playbook</h2>
         {error && <div className="tn-notice error">{error}</div>}
         {!data ? <p className="tn-loading">Loading…</p> : data.resources.length === 0 ? <p className="tn-small">No videos yet. Add the first one →</p> : (
           <div className="tn-table-wrap"><table className="tn-table">
@@ -156,7 +156,9 @@ function ResourcesAdmin() {
             <tbody>{data.resources.map((r) => (
               <tr key={r.id}>
                 <td>{r.sort_order}</td>
-                <td><a href={r.youtube_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontWeight: 700 }}>{r.title}</a></td>
+                <td>{r.pdf_file
+                  ? <><span className="tn-badge neutral" style={{ marginRight: 6 }}>PDF</span><span style={{ fontWeight: 700 }}>{r.title}</span></>
+                  : <a href={r.youtube_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontWeight: 700 }}>{r.title}</a>}</td>
                 <td>{r.platform === 'all' ? 'Everyone' : PLATFORM_LABEL[r.platform]}</td>
                 <td>{r.duration || '—'}</td>
                 <td>{r.published ? 'Yes' : 'Hidden'}</td>
@@ -170,12 +172,14 @@ function ResourcesAdmin() {
         )}
       </div>
       <form className="tn-card" onSubmit={save}>
-        <h2>{form.id ? 'Edit video' : 'Add a video'}</h2>
+        <h2>{form.pdf_file ? 'Edit PDF' : form.id ? 'Edit video' : 'Add a video'}</h2>
         {msg && <div className={`tn-notice ${msg[0]}`}>{msg[1]}</div>}
         <label className="tn-field"><span>Title</span><input className="tn-input" maxLength={120} value={form.title} onChange={(e) => set({ title: e.target.value })} placeholder="Build a profile that gets noticed" /></label>
-        <label className="tn-field"><span>YouTube link</span><input className="tn-input" value={form.youtube_url} onChange={(e) => set({ youtube_url: e.target.value })} placeholder="https://www.youtube.com/watch?v=…" />
-          {form.youtube_url && !youtubeId(form.youtube_url) && <div className="tn-count over" style={{ textAlign: 'left' }}>Not a YouTube video link</div>}
-        </label>
+        {form.pdf_file ? <p className="tn-small">PDF file: {form.pdf_file}. You can change its title, order and visibility.</p> : (
+          <label className="tn-field"><span>YouTube link</span><input className="tn-input" value={form.youtube_url || ''} onChange={(e) => set({ youtube_url: e.target.value })} placeholder="https://www.youtube.com/watch?v=…" />
+            {form.youtube_url && !youtubeId(form.youtube_url) && <div className="tn-count over" style={{ textAlign: 'left' }}>Not a YouTube video link</div>}
+          </label>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
           <label className="tn-field"><span>For</span>
             <select className="tn-select" value={form.platform} onChange={(e) => set({ platform: e.target.value })}>

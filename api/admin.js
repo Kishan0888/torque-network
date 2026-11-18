@@ -79,7 +79,15 @@ async function saveResource(body) {
     published: body.published !== false,
   }
   if (!row.title) throw new HttpError(400, 'Add a title.')
-  if (!youtubeId(row.youtube_url)) throw new HttpError(400, 'Paste a YouTube video link (youtube.com/watch?v=… or youtu.be/…).')
+  // PDF worksheets (pdf_file, shipped with the site) keep their file; only title/order/visibility change here.
+  let isPdf = false
+  if (body.id) {
+    const { data: existing, error: e0 } = await db().from('resources').select('pdf_file').eq('id', body.id).maybeSingle()
+    if (e0) throw e0
+    isPdf = Boolean(existing?.pdf_file)
+  }
+  if (isPdf) delete row.youtube_url
+  else if (!youtubeId(row.youtube_url)) throw new HttpError(400, 'Paste a YouTube video link (youtube.com/watch?v=… or youtu.be/…).')
   const q = body.id
     ? db().from('resources').update(row).eq('id', body.id)
     : db().from('resources').insert(row)

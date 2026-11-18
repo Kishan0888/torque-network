@@ -69,6 +69,8 @@ vi.mock('../api/_lib/auth.js', () => ({ requireUser: async () => currentUser }))
 
 process.env.RAZORPAY_PLAN_ID = 'plan_IG'
 process.env.RAZORPAY_LINKEDIN_PLAN_ID = 'plan_LI'
+process.env.SUPABASE_URL ||= 'https://sb.test'
+process.env.SUPABASE_SERVICE_ROLE_KEY ||= 'service-key'
 const dash = await import('../api/dashboard.js')
 const admin = await import('../api/admin.js')
 
@@ -225,6 +227,55 @@ describe('client feedback: Instagram link-only posts, own categories, engagement
     expect(rows.linkedin).toBeFalsy()
     expect((await call(dash, 'GET', 'resources', null, '&platform=instagram')).body.resources).toEqual([])
     expect((await call(dash, 'GET', 'resources', null, '&platform=linkedin')).body.resources).toHaveLength(1)
+  })
+
+  it('Growth Playbook PDFs: listed without the file name; only LinkedIn members can open them', async () => {
+    const PDF = '00000000-0000-4000-8000-0000000000f1'
+    const HIDDEN = '00000000-0000-4000-8000-0000000000f2'
+    tables.resources.push(
+      { id: PDF, platform: 'linkedin', title: 'Week 1: Why LinkedIn Matters for Your Career', youtube_url: null, pdf_file: 'week-01-why-linkedin-matters-for-your-career.pdf', published: true, sort_order: 1 },
+      { id: HIDDEN, platform: 'linkedin', title: 'Draft', youtube_url: null, pdf_file: 'week-02-set-your-goal-and-target-audience.pdf', published: false, sort_order: 2 },
+    )
+    const link = (id, dl = '') => call(dash, 'GET', 'playbook-link', null, `&id=${id}${dl}`)
+    const open = (u) => dash.GET(new Request(`https://x.test${u}`)) // the browser opens it: no login header
+
+    // Not a member yet → no link
+    expect((await link(PDF)).status).toBe(402)
+
+    subscribe('u1', 'plan_LI')
+    tables.member_platforms.push({ user_id: 'u1', platform: 'linkedin', domain: 'Marketing & Creative', interests: [], onboarded_at: 'x' })
+    const list = (await call(dash, 'GET', 'resources', null, '&platform=linkedin')).body.resources
+    expect(list).toHaveLength(1)
+    expect(list[0]).toMatchObject({ id: PDF, title: 'Week 1: Why LinkedIn Matters for Your Career', pdf: true })
+    expect(list[0]).not.toHaveProperty('pdf_file')
+
+    const { url } = (await link(PDF)).body
+    expect(url).toMatch(/^\/api\/dashboard\?action=playbook-file&/)
+    const ok = await open(url)
+    expect(ok.status).toBe(200)
+    expect(ok.headers.get('content-type')).toBe('application/pdf')
+    expect(ok.headers.get('content-disposition')).toMatch(/^inline; filename="Week 1 Why LinkedIn Matters for Your Career.pdf"/)
+    const bytes = new Uint8Array(await ok.arrayBuffer())
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-')
+    expect(bytes.length).toBe(390047) // the exact uploaded file
+    expect((await open((await link(PDF, '&download=1')).body.url)).headers.get('content-disposition')).toMatch(/^attachment/)
+
+    // Tampered or expired links are refused
+    const tampered = url.replace(/sig=([0-9a-f])/, (_m, c) => `sig=${c === '0' ? '1' : '0'}`)
+    expect((await open(tampered)).status).toBe(403)
+    const past = new URL(`https://x.test${url}`); past.searchParams.set('exp', String(Math.floor(Date.now() / 1000) - 10))
+    expect((await open(past.pathname + past.search)).status).toBe(410) // expired
+    const extended = new URL(`https://x.test${url}`); extended.searchParams.set('exp', String(Math.floor(Date.now() / 1000) + 86400))
+    expect((await open(extended.pathname + extended.search)).status).toBe(403) // can't extend: signature covers exp
+    expect((await open(url.replace(/id=[^&]+/, `id=${HIDDEN}`))).status).toBe(403)
+
+    expect((await link(HIDDEN)).status).toBe(404)
+    expect((await link('not-an-id')).status).toBe(400)
+
+    // Instagram-only member → no link (the playbook is LinkedIn-only)
+    currentUser = { id: 'u2', email: EMAILS.u2, identities: [] }
+    subscribe('u2', 'plan_IG')
+    expect((await link(PDF)).status).toBe(402)
   })
 })
 
