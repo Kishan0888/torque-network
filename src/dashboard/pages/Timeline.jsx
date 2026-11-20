@@ -26,7 +26,7 @@ export default function Timeline() {
   useEffect(() => { if (data) { setPosts(data.posts); setCounts(data.counts) } }, [data])
 
   const label = (f) => (f === 'all' ? 'Everyone' : f === 'domain' ? 'My domain' : f)
-  const filters = data?.filters || ['all', 'domain', ...(d.setup?.interests || [])]
+  const filters = data?.filters || ['all', 'domain']
   const where = PLATFORM_LABEL[d.platform]
 
   async function toggle(p) {
@@ -46,7 +46,7 @@ export default function Timeline() {
   const tabs = [['todo', 'To engage', counts?.todo], ['done', 'Engaged', counts?.done], ['all', 'All', counts?.all]]
   return (
     <>
-      <PageHead title="Member Posts" subtitle={`Posts from peers in ${d.setup?.domain || 'your community'}. Engage on ${where}, then tap “Mark as engaged” so they can see your support.`} />
+      <PageHead title="Member Posts" subtitle={`Posts from all ${PLATFORM_LABEL[d.platform] || ''} members of Torque Network. Engage on ${where}, then tap “Mark as engaged” so they can see your support.`} />
 
       <div className="tn-pills" role="tablist" aria-label="Engagement" style={{ marginBottom: 8 }}>
         {tabs.map(([k, l, n]) => (

@@ -133,7 +133,7 @@ describe('member dashboard API', () => {
     expect(tables.member_posts.every((p) => p.status === 'pending' && p.domain === 'Marketing & Creative')).toBe(true)
   })
 
-  it('timeline shows only approved peers’ posts from my domain/interests, never my own', async () => {
+  it('timeline shows every approved peer post on the platform (never my own); My domain / topic pills narrow it', async () => {
     subscribe('u1', 'plan_LI')
     tables.member_platforms.push(
       { user_id: 'u1', platform: 'linkedin', domain: 'Marketing & Creative', interests: ['Design'], onboarded_at: 'x' },
@@ -149,10 +149,26 @@ describe('member dashboard API', () => {
       { id: 'f', user_id: 'u2', platform: 'instagram', status: 'approved', domain: 'Marketing & Creative', summary: 'other platform', url: 'u', category: 'Reel', reviewed_at: now },
     )
     const all = await call(dash, 'GET', 'timeline', null, '&platform=linkedin&filter=all')
-    expect(all.body.posts.map((p) => p.id).sort()).toEqual(['a', 'b'])
+    expect(all.body.posts.map((p) => p.id).sort()).toEqual(['a', 'b', 'c']) // everyone: no pending, no own, no other platform
     expect(all.body.posts[0].author.name).toBe('Rohan Mehta')
+    expect(all.body.filters).toEqual(['all', 'domain', 'Design'])
     const mine = await call(dash, 'GET', 'timeline', null, '&platform=linkedin&filter=domain')
     expect(mine.body.posts.map((p) => p.id)).toEqual(['a'])
+    const topic = await call(dash, 'GET', 'timeline', null, '&platform=linkedin&filter=Design')
+    expect(topic.body.posts.map((p) => p.id)).toEqual(['b'])
+  })
+
+  it('Instagram: a Music & Dance member sees a Fashion & Beauty member’s post; no topic pills', async () => {
+    subscribe('u1', 'plan_IG')
+    tables.member_platforms.push(
+      { user_id: 'u1', platform: 'instagram', domain: 'Music & Dance', interests: ['Tutorials'], onboarded_at: 'x' },
+      { user_id: 'u2', platform: 'instagram', domain: 'Fashion & Beauty', onboarded_at: 'x' },
+    )
+    tables.member_posts.push({ id: 'g', user_id: 'u2', platform: 'instagram', status: 'approved', domain: 'Fashion & Beauty', topic: null, url: 'https://www.instagram.com/reel/Df6_HNIx-lu/', reviewed_at: new Date().toISOString() })
+    const r = await call(dash, 'GET', 'timeline', null, '&platform=instagram&filter=all&view=todo')
+    expect(r.body.posts.map((p) => p.id)).toEqual(['g'])
+    expect(r.body.filters).toEqual(['all', 'domain'])
+    expect((await call(dash, 'GET', 'home', null, '&platform=instagram')).body.timelineNew).toBe(1)
   })
 })
 

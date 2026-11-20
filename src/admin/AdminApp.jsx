@@ -7,7 +7,7 @@ import { apiFetch } from '../lib/api'
 import { Link, navigate } from '../lib/router'
 import { supabase } from '../lib/supabase'
 import '../dashboard/dashboard.css'
-import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId, postTitle } from '../../shared/memberConfig.js'
+import { DOMAINS, PLATFORMS, PLATFORM_LABEL, monthKey, youtubeId, postTitle, communityMessage, whatsappShareUrl } from '../../shared/memberConfig.js'
 
 const TABS = [['leads', 'Leads'], ['review', 'Review posts'], ['resources', 'Resources'], ['members', 'Members'], ['free', 'Free access']]
 const fmt = (iso) => (iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '—')
@@ -66,8 +66,35 @@ export default function AdminApp() {
 }
 
 // ── Review posts ───────────────────────────────────────────────────────────
+const COMMUNITY = { instagram: 'Instagram', linkedin: 'LinkedIn' }
+
+/** "Ready to share" bar: posts approved in this session, one WhatsApp message per platform. */
+function ShareQueue({ queue, onClear }) {
+  const [copied, setCopied] = useState('')
+  const groups = PLATFORMS.map((pf) => [pf, queue.filter((q) => q.platform === pf)]).filter(([, l]) => l.length)
+  if (!groups.length) return null
+  return (
+    <div className="tn-card" style={{ marginBottom: 14, borderColor: '#25D36655', background: '#f2fbf5' }}>
+      <h2 style={{ marginBottom: 4 }}>Ready to share in the WhatsApp communities</h2>
+      <p className="tn-small" style={{ marginTop: 0 }}>Tap Share, then pick the {groups.map(([pf]) => COMMUNITY[pf]).join(' / ')} community (its Announcements group) in WhatsApp and send.</p>
+      {groups.map(([pf, list]) => {
+        const text = communityMessage(pf, list.map((q) => q.url), { sameMember: new Set(list.map((q) => q.user_id)).size === 1 })
+        return (
+          <div key={pf} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '8px 0', borderTop: '1px solid var(--line, #eee)' }}>
+            <strong style={{ minWidth: 150 }}>{PLATFORM_LABEL[pf]}: {list.length} post{list.length === 1 ? '' : 's'}</strong>
+            <a className="tn-btn small" style={{ background: '#25D366', color: '#fff', borderColor: '#25D366' }} href={whatsappShareUrl(text)} target="_blank" rel="noopener noreferrer">Share on WhatsApp</a>
+            <button type="button" className="tn-btn small" onClick={async () => { try { await navigator.clipboard.writeText(text); setCopied(pf); setTimeout(() => setCopied(''), 2000) } catch { /* clipboard blocked */ } }}>{copied === pf ? 'Copied ✓' : 'Copy message'}</button>
+            <button type="button" className="tn-link" onClick={() => onClear(pf)}>Done, clear</button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function Review() {
   const [status, setStatus] = useState('pending')
+  const [shareQueue, setShareQueue] = useState([])
   const [platform, setPlatform] = useState('')
   const { data, error, loading, reload } = useApi(`/api/admin?action=posts&status=${status}${platform ? `&platform=${platform}` : ''}`)
   const [notes, setNotes] = useState({})
@@ -78,6 +105,7 @@ function Review() {
     setBusy(post.id); setMsg(null)
     try {
       await apiFetch('/api/admin?action=review', { method: 'POST', body: { id: post.id, note: notes[post.id] ?? post.moderator_note ?? '', ...patch } })
+      if (patch.status === 'approved') setShareQueue((q) => [...q.filter((x) => x.id !== post.id), post])
       await reload()
     } catch (e) { setMsg(e.message) } finally { setBusy(null) }
   }
@@ -93,6 +121,7 @@ function Review() {
         </select>
       </div>
       {(error || msg) && <div className="tn-notice error">{error || msg}</div>}
+      <ShareQueue queue={shareQueue} onClear={(pf) => setShareQueue((q) => q.filter((x) => x.platform !== pf))} />
       {loading && !data ? <p className="tn-loading">Loading…</p> : data && (
         data.posts.length === 0 ? <div className="tn-card tn-empty">Nothing here. {status === 'pending' ? 'All caught up 🎉' : ''}</div> : (
           <div className="tn-grid">
@@ -115,6 +144,10 @@ function Review() {
                     </label>
                   )}
                   {p.status !== 'pending' && <button className="tn-link" disabled={busy === p.id} onClick={() => act(p, { note: notes[p.id] ?? p.moderator_note ?? '' })}>Save note</button>}
+                  {p.status === 'approved' && (
+                    <a className="tn-btn small" style={{ background: '#25D366', color: '#fff', borderColor: '#25D366' }} href={whatsappShareUrl(communityMessage(p.platform, [p.url]))} target="_blank" rel="noopener noreferrer"
+                      title={`Opens WhatsApp with the message ready. Pick the ${COMMUNITY[p.platform]} community.`}>Share on WhatsApp</a>
+                  )}
                 </div>
               </div>
             ))}
@@ -447,13 +480,31 @@ function FreeAccess() {
 function Members() {
   const { data, error } = useApi('/api/admin?action=members')
   const [q, setQ] = useState('')
-  const rows = (data?.members || []).filter((m) => !q || `${m.name} ${m.email} ${m.phone}`.toLowerCase().includes(q.toLowerCase()))
+  const [plan, setPlan] = useState('all')
+  const PLAN_FILTERS = [
+    ['all', 'All', () => true],
+    ['instagram', 'Instagram', (m) => m.instagram],
+    ['linkedin', 'LinkedIn', (m) => m.linkedin],
+    ['none', 'No plan', (m) => !m.instagram && !m.linkedin],
+  ]
+  const all = data?.members || []
+  const byPlan = PLAN_FILTERS.find(([k]) => k === plan)[2]
+  const rows = all.filter(byPlan).filter((m) => !q || `${m.name} ${m.email} ${m.phone}`.toLowerCase().includes(q.toLowerCase()))
   return (
     <div className="tn-card">
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
         <h2 style={{ margin: 0 }}>Members {data && <span className="tn-small">({data.members.filter((m) => m.linkedin || m.instagram).length} active of {data.members.length} accounts)</span>}</h2>
         <input className="tn-input" style={{ maxWidth: 260 }} placeholder="Search name, email, phone" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
+      {data && (
+        <div className="tn-pills" role="tablist" aria-label="Filter by plan" style={{ marginBottom: 12 }}>
+          {PLAN_FILTERS.map(([k, label, fn]) => (
+            <button key={k} type="button" role="tab" aria-selected={plan === k} className={`tn-pill ${plan === k ? 'on' : ''}`} onClick={() => setPlan(k)}>
+              {label} ({all.filter(fn).length})
+            </button>
+          ))}
+        </div>
+      )}
       {error && <div className="tn-notice error">{error}</div>}
       {!data ? <p className="tn-loading">Loading…</p> : (
         <div className="tn-table-wrap"><table className="tn-table">

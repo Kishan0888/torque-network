@@ -202,3 +202,46 @@ export function youtubeId(url) {
   const m = String(url || '').match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
   return m ? m[1] : null
 }
+
+// ── WhatsApp community announcement (admin "Share on WhatsApp") ─────────────
+// WhatsApp has no official way for a website to post into a large community, so the
+// admin panel opens WhatsApp with this message filled in and the admin picks the group.
+const SHARE_STEPS = {
+  instagram: ['See the post / Video.', 'Leave a thoughtful comment in your own words.', 'Like it, share it and save it.'],
+  linkedin: ['Read the post.', 'Leave a thoughtful comment in your own words.', 'Like it and repost it.'],
+}
+const SHARE_ASK = {
+  instagram: 'Please like, share, save & comment and follow.',
+  linkedin: 'Please like, comment & repost, and follow / connect.',
+}
+
+/** Community message for one or more approved posts of the same platform. */
+export function communityMessage(platform, urls, { sameMember = true } = {}) {
+  const list = (urls || []).filter(Boolean)
+  const n = list.length
+  const who = sameMember ? 'one of our members' : 'our members'
+  const intro = n === 1
+    ? `Here is a new post from ${who}. Take a minute to go through it and engage.`
+    : `Here are ${n} more posts from ${who}. Take a minute to go through them and engage.`
+  const posts = n === 1 ? [`Post: ${list[0]}`] : list.map((u, i) => `Post ${i + 1}) ${u}`)
+  return [
+    'Dear Torque Network Members,',
+    '',
+    intro,
+    '',
+    ...posts,
+    '',
+    'What to do now :',
+    ...(SHARE_STEPS[platform] || SHARE_STEPS.instagram).map((s) => `✅ ${s}`),
+    '',
+    SHARE_ASK[platform] || SHARE_ASK.instagram,
+    '',
+    'Note - You can see all the posts of your fellow members on your login dashboard. Please check it at least once a day so you can engage with their posts and we can all grow together.',
+    '',
+    'Regards,',
+    'Torque Network',
+  ].join('\n')
+}
+
+/** Opens WhatsApp (app or web) with the message ready; the admin chooses the community group. */
+export const whatsappShareUrl = (text) => `https://wa.me/?text=${encodeURIComponent(text)}`

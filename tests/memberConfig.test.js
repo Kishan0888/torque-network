@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizePostUrl, normalizeProfile, weekStart, weekStreak, monthKey, dailyShuffle, youtubeId, DOMAINS, PLATFORM_FEATURES, WHATSAPP_COMMUNITY_URLS } from '../shared/memberConfig.js'
+import { normalizePostUrl, normalizeProfile, weekStart, weekStreak, monthKey, dailyShuffle, youtubeId, DOMAINS, PLATFORM_FEATURES, WHATSAPP_COMMUNITY_URLS, communityMessage, whatsappShareUrl } from '../shared/memberConfig.js'
 
 describe('post link validation', () => {
   it.each([
@@ -87,5 +87,24 @@ describe('timeline shuffle and product settings', () => {
     expect(youtubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1')).toBe('dQw4w9WgXcQ')
     expect(youtubeId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ')
     expect(youtubeId('https://vimeo.com/1')).toBe(null)
+  })
+})
+
+describe('WhatsApp community message', () => {
+  it('matches the template: one member, 2 Instagram posts', () => {
+    const t = communityMessage('instagram', ['https://www.instagram.com/reel/A/', 'https://www.instagram.com/reel/B/'])
+    expect(t).toContain('Dear Torque Network Members,')
+    expect(t).toContain('Here are 2 more posts from one of our members.')
+    expect(t).toContain('Post 1) https://www.instagram.com/reel/A/\nPost 2) https://www.instagram.com/reel/B/')
+    expect(t).toContain('✅ Like it, share it and save it.')
+    expect(t.endsWith('Regards,\nTorque Network')).toBe(true)
+  })
+  it('single LinkedIn post uses LinkedIn wording; different members are "our members"', () => {
+    const one = communityMessage('linkedin', ['https://www.linkedin.com/posts/x'])
+    expect(one).toContain('Here is a new post from one of our members.')
+    expect(one).toContain('Post: https://www.linkedin.com/posts/x')
+    expect(one).toContain('✅ Like it and repost it.')
+    expect(communityMessage('linkedin', ['a', 'b'], { sameMember: false })).toContain('from our members')
+    expect(whatsappShareUrl('a & b\n✅')).toBe('https://wa.me/?text=a%20%26%20b%0A%E2%9C%85')
   })
 })

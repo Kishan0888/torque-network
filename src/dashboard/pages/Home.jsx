@@ -30,7 +30,7 @@ export default function Home() {
             <Link to="/dashboard/timeline" className="tn-card" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="tn-stat-label">New in Member Posts</div>
               <div className="tn-stat">{data.timelineNew} post{data.timelineNew === 1 ? '' : 's'}</div>
-              <div className="tn-small">from {d.setup?.domain || 'your'} peers this week</div>
+              <div className="tn-small">from fellow members this week</div>
             </Link>
             {PLATFORM_FEATURES[d.platform].guide ? (
               <div className="tn-card">

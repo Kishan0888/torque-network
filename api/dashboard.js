@@ -161,10 +161,9 @@ async function home(user, platform) {
   const since = new Date(Date.now() - 7 * 86400000).toISOString()
   const [used, timelineCount, guide, spotlight] = await Promise.all([
     postsThisWeek(user.id, platform),
-    me?.domain
-      ? db().from('member_posts').select('id', { count: 'exact', head: true })
-          .eq('platform', platform).eq('status', 'approved').eq('domain', me.domain).neq('user_id', user.id).gte('reviewed_at', since)
-      : Promise.resolve({ count: 0 }),
+    // Same audience as Member Posts: every approved peer post on this platform this week.
+    db().from('member_posts').select('id', { count: 'exact', head: true })
+      .eq('platform', platform).eq('status', 'approved').neq('user_id', user.id).gte('reviewed_at', since),
     me?.domain
       ? db().from('monthly_guides').select('id, month, theme').eq('platform', platform).eq('domain', me.domain).eq('month', monthKey()).eq('published', true).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -238,9 +237,11 @@ async function feedPosts(userId, platform, me, filter) {
     .eq('platform', platform).eq('status', 'approved').neq('user_id', userId).gte('reviewed_at', since)
     .order('reviewed_at', { ascending: false }).limit(300)
   if (error) throw error
+  // "Everyone" (the default) really is everyone on this platform, so every approved post
+  // reaches every member. "My domain" and topic pills narrow it down.
   if (filter === 'domain') return posts.filter((p) => p.domain && p.domain === me?.domain)
-  if (filter && filter !== 'all') return posts.filter((p) => p.topic === filter)
-  return posts.filter((p) => (me?.domain && p.domain === me.domain) || (p.topic && interests.includes(p.topic)))
+  if (filter && filter !== 'all' && interests.includes(filter)) return posts.filter((p) => p.topic === filter)
+  return posts
 }
 
 async function engagedIds(userId, postIds) {
@@ -285,7 +286,8 @@ async function timeline(user, platform, filter, view) {
   const platById = Object.fromEntries((plats.data || []).map((p) => [p.user_id, p]))
 
   return {
-    filters: ['all', 'domain', ...interests],
+    // Instagram posts are link-only (no topic), so topic pills would always be empty there.
+    filters: ['all', 'domain', ...(PLATFORM_FEATURES[platform].postDetails ? interests : [])],
     counts,
     posts: list.map((p) => ({
       id: p.id, url: p.url, category: p.category, topic: p.topic, summary: p.summary, domain: p.domain, approved_at: p.reviewed_at,
