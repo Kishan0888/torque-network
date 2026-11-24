@@ -186,12 +186,23 @@ async function usersByEmail() {
   return out
 }
 
+// Supabase returns at most 1,000 rows per request, so read the list in pages.
+async function allFreeAccessRows() {
+  const PAGE = 1000
+  const rows = []
+  for (let from = 0; from < 50000; from += PAGE) {
+    const { data, error } = await db().from('complimentary_access').select('*')
+      .order('created_at', { ascending: false }).order('email').order('product')
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    rows.push(...data)
+    if (data.length < PAGE) break
+  }
+  return rows
+}
+
 async function freeAccess() {
-  const [{ data, error }, users] = await Promise.all([
-    db().from('complimentary_access').select('*').order('created_at', { ascending: false }).limit(5000),
-    usersByEmail(),
-  ])
-  if (error) throw error
+  const [data, users] = await Promise.all([allFreeAccessRows(), usersByEmail()])
   const now = new Date().toISOString()
   return {
     access: data.map((r) => {

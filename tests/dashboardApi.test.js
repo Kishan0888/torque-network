@@ -6,7 +6,7 @@ let nextId = 1
 function from(name) {
   const rows = (tables[name] ||= [])
   const f = []
-  let op = 'select', payload, opts = {}, countMode = false, single = null, limitN = null, orderBy = []
+  let op = 'select', payload, opts = {}, countMode = false, single = null, limitN = null, rangeFrom = null, rangeTo = null, orderBy = []
   const api = {
     select(_cols, o) { if (o?.count) countMode = true; return api },
     eq(c, v) { f.push((r) => r[c] === v); return api },
@@ -16,6 +16,7 @@ function from(name) {
     lte(c, v) { f.push((r) => r[c] <= v); return api },
     order(c, o) { orderBy.push([c, o?.ascending !== false]); return api },
     limit(n) { limitN = n; return api },
+    range(a, b) { rangeFrom = a; rangeTo = b; return api },
     insert(p) { op = 'insert'; payload = p; return api },
     upsert(p, o) { op = 'upsert'; payload = p; opts = o || {}; return api },
     update(p) { op = 'update'; payload = p; return api },
@@ -45,7 +46,9 @@ function from(name) {
     } else {
       data = match()
       for (const [c, asc] of orderBy.reverse()) data = [...data].sort((a, b) => (a[c] > b[c] ? 1 : -1) * (asc ? 1 : -1))
+      if (rangeFrom !== null) data = data.slice(rangeFrom, rangeTo + 1)
       if (limitN) data = data.slice(0, limitN)
+      if (op === 'select' && !single) data = data.slice(0, 1000) // like Supabase's max rows per request
     }
     if (countMode) return { count: data.length, data: null, error: null }
     if (single) return { data: data[0] ?? null, error: single === 'one' && !data[0] ? { message: 'none' } : null }
@@ -339,6 +342,17 @@ describe('free (complimentary) access', () => {
     await call(admin, 'POST', 'free-access-update', { email: 'free@example.com', product: 'linkedin', expires_at: null })
     expect((await call(admin, 'POST', 'free-access-remove', { email: 'free@example.com', product: 'linkedin' })).status).toBe(200)
     expect(tables.complimentary_access.map((c) => c.email)).toEqual(['someone@else.com'])
+  })
+})
+
+describe('admin free-access list', () => {
+  it('lists every row, not just the first 1,000', async () => {
+    tables.admins.push({ user_id: 'u1' })
+    currentUser = { id: 'u1', email: EMAILS.u1, identities: [] }
+    for (let i = 0; i < 2500; i++) tables.complimentary_access.push({ email: `m${i}@x.com`, product: i % 7 ? 'instagram' : 'linkedin', created_at: '2026-11-23T00:00:00Z' })
+    const r = await call(admin, 'GET', 'free-access')
+    expect(r.body.access).toHaveLength(2500)
+    expect(new Set(r.body.access.map((a) => `${a.email}:${a.product}`)).size).toBe(2500)
   })
 })
 
